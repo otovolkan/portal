@@ -1,70 +1,83 @@
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import pandas as pd
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import os
-import re
-import json
-from datetime import datetime
 
-app = Flask(__name__)
-app.secret_key = "oto_volkan_b2b_v2026"
+app = Flask(otovolkan)
+app.secret_key = Oto959595-
 
-def verileri_yukle(sayfa_adi):
-    if not os.path.exists('urunler.xlsx'): return []
+# --- GMAIL AYARLARI ---
+# Buradaki e-posta ve uygulama şifresini kendi bilgilerine göre güncellemelisin
+GMAIL_ADRESIM = "voxoraku@gmail.com" 
+GMAIL_SIFREM = "njkv hlgp kdfs hizn" # Google'dan aldığın 16 haneli uygulama şifresi
+
+# --- EXCEL VERİSİ YÜKLEME ---
+def verileri_getir():
     try:
-        df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
-        return df.fillna('').to_dict(orient='records')
-    except: return []
+        df = pd.read_excel('urunler.xlsx')
+        return df.to_dict(orient='records')
+    except Exception as e:
+        print(f"Excel okuma hatası: {e}")
+        return []
 
-def kdv_hesapla(fiyat_str):
-    sayi_temiz = re.sub(r'[^\d]', '', str(fiyat_str))
-    if not sayi_temiz: return 0
-    return int(int(sayi_temiz) * 1.20)
+# --- E-POSTA GÖNDERME FONKSİYONU ---
+def siparis_maili_gonder(bayi_adi, sepet_detay):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = GMAIL_ADRESIM
+        msg['To'] = GMAIL_ADRESIM # Sipariş kendi mailine gelsin
+        msg['Subject'] = f"YENİ B2B SİPARİŞİ: {bayi_adi}"
+
+        icerik = f"Sayın Yönetici,\n\n{bayi_adi} bayisinden yeni bir sipariş geldi.\n\nSİPARİŞ İÇERİĞİ:\n{sepet_detay}\n\nLütfen en kısa sürede işleme alınız."
+        msg.attach(MIMEText(icerik, 'plain', 'utf-8'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(GMAIL_ADRESIM, GMAIL_SIFREM)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Mail gönderme hatası: {e}")
+        return False
+
+# --- SAYFA YÖNLENDİRMELERİ ---
+@app.route('/')
+def home():
+    if 'bayi' in session:
+        urunler = verileri_getir()
+        return render_template('index.html', urunler=urunler, bayi=session['bayi'])
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        girilen_kod = request.form['bayi_kodu'].strip().lower()
-        bayiler = verileri_yukle('bayiler')
-        bayi = next((b for b in bayiler if str(b['bayi_kodu']).strip().lower() == girilen_kod), None)
-        if bayi:
-            session.update({'giris_yapildi': True, 'bayi_adi': bayi['bayi_adi'], 'sepet': {}})
-            return redirect(url_for('ana_sayfa'))
+        bayi_kodu = request.form.get('bayi_kodu')
+        # Basit bir kontrol; gerçek sistemde burası Excel veya veritabanından bakabilir
+        if bayi_kodu:
+            session['bayi'] = bayi_kodu
+            return redirect(url_for('home'))
     return render_template('login.html')
 
-@app.route('/')
-def ana_sayfa():
-    if not session.get('giris_yapildi'): return redirect(url_for('login'))
-    arama = request.args.get('search', '').lower()
-    secili_marka = request.args.get('marka', '')
-    items = verileri_yukle('urunler')
-    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and u['urun_no'] != 'REKLAM'])))
+@app.route('/siparis_tamamla', methods=['POST'])
+def siparis_tamamla():
+    if 'bayi' not in session:
+        return jsonify({"durum": "hata", "mesaj": "Oturum açık değil"}), 401
     
-    reklamlar = [u for u in items if u['urun_no'] == 'REKLAM']
-    urunler = []
-    arama_yapildi = (arama != '' or secili_marka != '')
-
-    if arama_yapildi:
-        urunler = [u for u in items if u['urun_no'] != 'REKLAM']
-        if arama:
-            urunler = [u for u in urunler if arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()]
-        if secili_marka:
-            urunler = [u for u in urunler if str(u['marka']) == secili_marka]
+    veriler = request.json
+    sepet = veriler.get('sepet', '')
+    bayi = session['bayi']
     
-    sepet_adet = sum(int(v) for v in session.get('sepet', {}).values())
-    return render_template('index.html', urunler=urunler, reklamlar=reklamlar, markalar=markalar, 
-                           sepet_sayisi=sepet_adet, bayi_adi=session['bayi_adi'], 
-                           secili_marka=secili_marka, arama_yapildi=arama_yapildi)
+    if siparis_maili_gonder(bayi, sepet):
+        return jsonify({"durum": "basarili", "mesaj": "Siparişiniz e-posta ile iletildi!"})
+    else:
+        return jsonify({"durum": "hata", "mesaj": "Sipariş alındı ancak bildirim gönderilemedi."})
 
-@app.route('/sepete_ekle/<urun_no>')
-def sepete_ekle(urun_no):
-    sepet = session.get('sepet', {})
-    sepet[str(urun_no)] = int(sepet.get(str(urun_no), 0)) + 1
-    session['sepet'] = sepet
-    return redirect(request.referrer or url_for('ana_sayfa'))
-
-@app.route('/cikis')
-def cikis():
-    session.clear()
+@app.route('/logout')
+def logout():
+    session.pop('bayi', None)
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
