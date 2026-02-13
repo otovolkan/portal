@@ -2,126 +2,53 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OTO VOLKAN B2B PORTAL</title>
+    <title>OTO VOLKAN PORTAL</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f7f6; }
-        .navbar { background-color: #0056b3 !important; }
-        .sidebar { background: white; min-height: 100vh; border-right: 1px solid #ddd; padding: 20px; }
-        .product-card { background: white; border: none; border-radius: 10px; transition: 0.3s; height: 100%; }
-        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .product-img { width: 100%; height: 180px; object-fit: contain; padding: 10px; }
-        .price-tag { color: #28a745; font-size: 1.2rem; font-weight: bold; }
-        .brand-link { text-decoration: none; color: #333; display: block; padding: 8px; border-radius: 5px; }
-        .brand-link:hover { background: #e9ecef; }
+        .product-img { height: 150px; object-fit: contain; }
+        .card { transition: 0.3s; border-radius: 10px; }
+        .card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     </style>
 </head>
-<body>
+<body class="bg-light">
 
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="/">OTO VOLKAN B2B</a>
-        <div class="d-flex align-items-center">
-            <span class="text-white me-3">Bayi: <strong>{{ bayi }}</strong></span>
-            <a href="/cikis" class="btn btn-outline-light btn-sm">Güvenli Çıkış</a>
-        </div>
-    </div>
+<nav class="navbar navbar-dark bg-dark px-4">
+    <a class="navbar-brand">OTO VOLKAN B2B</a>
+    <span class="navbar-text text-white">Hoş geldin: {{ bayi }} | <a href="/cikis" class="btn btn-danger btn-sm">Çıkış</a></span>
 </nav>
 
-<div class="container-fluid">
+<div class="container-fluid mt-4">
     <div class="row">
-        <div class="col-md-2 sidebar d-none d-md-block">
-            <h5 class="fw-bold mb-3">Markalar</h5>
-            <a href="/" class="brand-link fw-bold border-bottom mb-2">Tüm Ürünler</a>
-            {% for m in markalar %}
-                <a href="#" class="brand-link" onclick="filtrele('{{ m }}')">{{ m }}</a>
-            {% endfor %}
+        <div class="col-md-2">
+            <div class="list-group">
+                <a href="/" class="list-group-item list-group-item-action active">TÜM MARKALAR</a>
+                {% for m in markalar %}
+                <a href="#" class="list-group-item list-group-item-action">{{ m }}</a>
+                {% endfor %}
+            </div>
         </div>
 
-        <div class="col-md-10 p-4">
-            <div class="row" id="urun-listesi">
-                {% if urunler %}
-                    {% for u in urunler %}
-                    <div class="col-md-3 mb-4 urun-item" data-marka="{{ u.marka }}">
-                        <div class="card product-card shadow-sm p-2">
-                            <img src="{{ url_for('static', filename='images/' + u.resim|string) }}" 
-                                 class="product-img" 
-                                 onerror="this.src='https://via.placeholder.com/200x200?text=Resim+Bulunamadı'">
-                            
-                            <div class="card-body text-center">
-                                <small class="text-muted text-uppercase">{{ u.marka }}</small>
-                                <h6 class="card-title fw-bold mt-1" style="height: 40px; overflow: hidden;">{{ u.urun_adi }}</h6>
-                                <p class="price-tag mb-3">{{ u.fiyat }} TL</p>
-                                <button class="btn btn-primary w-100" onclick="sepeteEkle('{{ u.urun_adi }}', '{{ u.fiyat }}')">
-                                    Sepete Ekle
-                                </button>
-                            </div>
+        <div class="col-md-10">
+            <div class="row">
+                {% for u in urunler %}
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100 text-center p-2">
+                        <img src="{{ url_for('static', filename='images/' + u.resim) }}" 
+                             class="product-img" 
+                             onerror="this.src='https://via.placeholder.com/150?text=Resim+Yok'">
+                        <div class="card-body">
+                            <h6 class="fw-bold">{{ u.urun_adi }}</h6>
+                            <p class="text-muted small">{{ u.marka }}</p>
+                            <h5 class="text-success">{{ u.fiyat }} TL</h5>
+                            <button class="btn btn-primary btn-sm w-100">Sepete Ekle</button>
                         </div>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="col-12 text-center py-5">
-                        <h4 class="text-muted">Henüz ürün yüklenmemiş veya Excel okunamadı.</h4>
-                        <p>Lütfen urunler.xlsx dosyasını kontrol edin.</p>
-                    </div>
-                {% endif %}
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
 </div>
-
-<div style="position: fixed; bottom: 20px; right: 20px;">
-    <button class="btn btn-success btn-lg shadow" onclick="siparisTamamla()">
-        Siparişi Onayla (<span id="sepet-sayi">0</span>)
-    </button>
-</div>
-
-<script>
-    let sepet = [];
-
-    function sepeteEkle(ad, fiyat) {
-        sepet.push({ad: ad, fiyat: fiyat});
-        document.getElementById('sepet-sayi').innerText = sepet.length;
-        alert(ad + " sepete eklendi!");
-    }
-
-    function siparisTamamla() {
-        if (sepet.length === 0) {
-            alert("Sepetiniz boş!");
-            return;
-        }
-
-        let sepetMetni = sepet.map(item => item.ad + " - " + item.fiyat + " TL").join("\n");
-        
-        fetch('/siparis_tamamla', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ sepet: sepetMetni })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.durum === 'basarili') {
-                alert("Siparişiniz merkeze e-posta ile iletildi!");
-                sepet = [];
-                document.getElementById('sepet-sayi').innerText = 0;
-            } else {
-                alert("Hata oluştu: " + data.mesaj);
-            }
-        });
-    }
-
-    function filtrele(marka) {
-        let items = document.getElementsByClassName('urun-item');
-        for (let item of items) {
-            if (item.getAttribute('data-marka') === marka || marka === 'Tüm') {
-                item.style.display = 'block';
-            } else {
-                item.style.display = 'none';
-            }
-        }
-    }
-</script>
 
 </body>
 </html>
