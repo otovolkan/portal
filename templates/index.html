@@ -1,122 +1,127 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8"><title>Oto Volkan B2B</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTO VOLKAN B2B PORTAL</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .brand-title { line-height: 1.1; }
-        .brand-sub { font-size: 0.8rem; letter-spacing: 1px; color: #d1d1d1; }
-        .bayi-vurgu { font-size: 0.85rem; color: #fff; margin-top: 5px; opacity: 0.9; display: block; }
-        
-        /* KAMPANYA RESİM DÜZENİ - GÜNCELLENDİ */
-        .reklam-kutu { 
-            height: 400px; /* Yükseklik 2 katına çıkarıldı */
-            overflow: hidden; 
-            border-radius: 12px; 
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            background: #fff;
-            border: 1px solid #dee2e6;
-        }
-        .reklam-kutu img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: contain; /* Resmi bozmadan, kutunun içine sığdırır */
-            padding: 10px; /* Kenarlardan hafif boşluk vererek daha şık durmasını sağlar */
-        }
-
-        .modal-custom { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
-        .modal-content-custom { position: relative; background: #fff; margin: 5% auto; padding: 20px; width: 45%; border-radius: 12px; text-align: center; }
-        .close-btn { position: absolute; right: 15px; top: 10px; font-size: 30px; cursor: pointer; color: #000; }
+        body { background-color: #f4f7f6; }
+        .navbar { background-color: #0056b3 !important; }
+        .sidebar { background: white; min-height: 100vh; border-right: 1px solid #ddd; padding: 20px; }
+        .product-card { background: white; border: none; border-radius: 10px; transition: 0.3s; height: 100%; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .product-img { width: 100%; height: 180px; object-fit: contain; padding: 10px; }
+        .price-tag { color: #28a745; font-size: 1.2rem; font-weight: bold; }
+        .brand-link { text-decoration: none; color: #333; display: block; padding: 8px; border-radius: 5px; }
+        .brand-link:hover { background: #e9ecef; }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div id="imageModal" class="modal-custom" onclick="this.style.display='none'">
-    <div class="modal-content-custom" onclick="event.stopPropagation()">
-        <span class="close-btn" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
-        <h5 id="modalTitle" class="mb-3 fw-bold text-primary"></h5>
-        <img id="modalImg" src="" style="max-width:100%; border-radius:8px;">
-    </div>
-</div>
-
-<nav class="navbar navbar-dark bg-primary shadow sticky-top py-2">
-    <div class="container border-0">
-        <div class="brand-title">
-            <a class="navbar-brand fw-bold fs-3 mb-0" href="/">OTO VOLKAN</a>
-            <div class="brand-sub fw-bold">B2B PORTAL</div>
-            <span class="bayi-vurgu">Hoş Geldiniz: <b>{{ bayi_adi }}</b></span>
-        </div>
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="/">OTO VOLKAN B2B</a>
         <div class="d-flex align-items-center">
-            <a href="/sepetim" class="btn btn-warning btn-sm me-2 shadow-sm fw-bold px-3">🛒 SEPET ({{ sepet_sayisi }})</a>
-            <a href="/cikis" class="btn btn-danger btn-sm">Çıkış</a>
+            <span class="text-white me-3">Bayi: <strong>{{ bayi }}</strong></span>
+            <a href="/cikis" class="btn btn-outline-light btn-sm">Güvenli Çıkış</a>
         </div>
     </div>
 </nav>
 
-<div class="container mt-4">
-    <form action="/" method="GET" class="row g-2 mb-4 bg-white p-3 rounded shadow-sm border border-primary">
-        <div class="col-md-6"><input class="form-control form-control-lg" name="search" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus></div>
-        <div class="col-md-4">
-            <select name="marka" class="form-select form-select-lg">
-                <option value="">Tüm Markalar</option>
-                {% for m in markalar %}<option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2"><button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">SORGULA</button></div>
-    </form>
-
-    {% if not arama_yapildi %}
-        <div class="row row-cols-1 row-cols-md-3 g-3">
-            {% for r in reklamlar %}
-                <div class="col">
-                    <div class="reklam-kutu">
-                        <img src="{{ url_for('static', filename='images/' + r.resim|string) }}" alt="Kampanya" onerror="this.src='https://via.placeholder.com/400x400?text=Resim+Bulunamadı'">
-                    </div>
-                </div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 sidebar d-none d-md-block">
+            <h5 class="fw-bold mb-3">Markalar</h5>
+            <a href="/" class="brand-link fw-bold border-bottom mb-2">Tüm Ürünler</a>
+            {% for m in markalar %}
+                <a href="#" class="brand-link" onclick="filtrele('{{ m }}')">{{ m }}</a>
             {% endfor %}
         </div>
-    {% else %}
-        <div class="bg-white rounded shadow-sm overflow-hidden border">
-            <table class="table table-hover align-middle mb-0 text-center">
-                <thead class="table-dark">
-                    <tr><th>Parça No</th><th>Marka</th><th class="text-start">Ürün Adı</th><th>Fiyat</th><th>Stok</th><th>İşlem</th></tr>
-                </thead>
-                <tbody>
-                    {% for p in urunler %}
-                    <tr>
-                        <td class="fw-bold text-primary">{{ p.urun_no }}</td>
-                        <td class="text-uppercase small fw-bold text-muted">{{ p.marka }}</td>
-                        <td class="text-start small">{{ p.urun_adi }}</td>
-                        <td class="text-nowrap text-success fw-bold">
-                            {% if p.indirimli_fiyat and p.indirimli_fiyat != '' %}
-                                <del class="text-muted small d-block">{{ p.fiyat }}</del>
-                                <span class="text-danger">{{ p.indirimli_fiyat }}</span>
-                            {% else %}
-                                {{ p.fiyat }}
-                            {% endif %}
-                        </td>
-                        <td>{% if p.stok|int > 0 %}<span class="text-success fw-bold small">✔ VAR</span>{% else %}<span class="text-danger fw-bold small">✖ YOK</span>{% endif %}</td>
-                        <td>
-                            <div class="btn-group shadow-sm">
-                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary btn-sm fw-bold">+ EKLE</a>
-                                <button class="btn btn-outline-secondary btn-sm fw-bold" onclick="openModal('{{ url_for('static', filename='images/' + p.resim|string) }}', '{{ p.urun_adi }}')">RESİM</button>
+
+        <div class="col-md-10 p-4">
+            <div class="row" id="urun-listesi">
+                {% if urunler %}
+                    {% for u in urunler %}
+                    <div class="col-md-3 mb-4 urun-item" data-marka="{{ u.marka }}">
+                        <div class="card product-card shadow-sm p-2">
+                            <img src="{{ url_for('static', filename='images/' + u.resim|string) }}" 
+                                 class="product-img" 
+                                 onerror="this.src='https://via.placeholder.com/200x200?text=Resim+Bulunamadı'">
+                            
+                            <div class="card-body text-center">
+                                <small class="text-muted text-uppercase">{{ u.marka }}</small>
+                                <h6 class="card-title fw-bold mt-1" style="height: 40px; overflow: hidden;">{{ u.urun_adi }}</h6>
+                                <p class="price-tag mb-3">{{ u.fiyat }} TL</p>
+                                <button class="btn btn-primary w-100" onclick="sepeteEkle('{{ u.urun_adi }}', '{{ u.fiyat }}')">
+                                    Sepete Ekle
+                                </button>
                             </div>
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
+                {% else %}
+                    <div class="col-12 text-center py-5">
+                        <h4 class="text-muted">Henüz ürün yüklenmemiş veya Excel okunamadı.</h4>
+                        <p>Lütfen urunler.xlsx dosyasını kontrol edin.</p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-    {% endif %}
+    </div>
+</div>
+
+<div style="position: fixed; bottom: 20px; right: 20px;">
+    <button class="btn btn-success btn-lg shadow" onclick="siparisTamamla()">
+        Siparişi Onayla (<span id="sepet-sayi">0</span>)
+    </button>
 </div>
 
 <script>
-function openModal(imgSrc, title) {
-    document.getElementById('modalImg').src = imgSrc;
-    document.getElementById('modalTitle').innerText = title;
-    document.getElementById('imageModal').style.display = 'block';
-}
+    let sepet = [];
+
+    function sepeteEkle(ad, fiyat) {
+        sepet.push({ad: ad, fiyat: fiyat});
+        document.getElementById('sepet-sayi').innerText = sepet.length;
+        alert(ad + " sepete eklendi!");
+    }
+
+    function siparisTamamla() {
+        if (sepet.length === 0) {
+            alert("Sepetiniz boş!");
+            return;
+        }
+
+        let sepetMetni = sepet.map(item => item.ad + " - " + item.fiyat + " TL").join("\n");
+        
+        fetch('/siparis_tamamla', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ sepet: sepetMetni })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.durum === 'basarili') {
+                alert("Siparişiniz merkeze e-posta ile iletildi!");
+                sepet = [];
+                document.getElementById('sepet-sayi').innerText = 0;
+            } else {
+                alert("Hata oluştu: " + data.mesaj);
+            }
+        });
+    }
+
+    function filtrele(marka) {
+        let items = document.getElementsByClassName('urun-item');
+        for (let item of items) {
+            if (item.getAttribute('data-marka') === marka || marka === 'Tüm') {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        }
+    }
 </script>
+
 </body>
 </html>
