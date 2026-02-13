@@ -6,11 +6,11 @@ from email.mime.multipart import MIMEMultipart
 import os
 
 app = Flask(__name__)
-app.secret_key = 'Oto_Volkan_Voxor_2026_Tam_Guvenlik'
+app.secret_key = 'Oto959595-'
 
 # --- GMAIL AYARLARI ---
-GMAIL_ADRESIM = "senin_epostan@gmail.com" 
-GMAIL_SIFREM = "xxxx xxxx xxxx xxxx" # Google 16 haneli kod
+GMAIL_ADRESIM = "voxoraku@gmail.com" 
+GMAIL_SIFREM = "gpml fttc uzzu zvaa" # Google'dan aldığın 16 haneli uygulama şifresi
 
 def verileri_hazirla():
     try:
