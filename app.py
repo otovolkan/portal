@@ -6,12 +6,14 @@ from email.mime.multipart import MIMEMultipart
 import os
 
 app = Flask(__name__)
-app.secret_key = 'Oto_Volkan_Voxor_2026_Tam_Guvenlik'
+# Oturum güvenliği için anahtar (sepetteki ürünleri ve girişi hatırlar)
+app.secret_key = 'otovolkan_gizli_anahtar_2026'
 
 # --- GMAIL AYARLARI ---
 # Burayı kendi bilgilerine göre doldur ustam!
 GMAIL_ADRESIM = "voxoraku@gmail.com" 
 GMAIL_SIFREM = "gpml fttc uzzu zvaa" # Google'dan aldığın 16 haneli uygulama şifresi
+
 def verileri_hazirla():
     try:
         if not os.path.exists('urunler.xlsx'):
@@ -22,10 +24,10 @@ def verileri_hazirla():
         df = pd.read_excel('urunler.xlsx', engine='openpyxl')
         df = df.fillna('')
         
-        # Sütun isimlerini standart hale getiriyoruz
+        # Sütun isimlerini standart hale getiriyoruz (boşlukları sil, küçük harf yap)
         df.columns = [str(c).strip().lower() for c in df.columns]
         
-        # Excel'deki başlıkları kodla eşleştiriyoruz
+        # Excel'deki başlıkları kodla eşleştiriyoruz (Ürün Adı -> urun_adi gibi)
         mapping = {
             'ürün adı': 'urun_adi', 'urun adi': 'urun_adi', 'adi': 'urun_adi', 'ad': 'urun_adi',
             'marka': 'marka', 'brand': 'marka',
@@ -37,7 +39,7 @@ def verileri_hazirla():
         urunler = df.to_dict(orient='records')
         
         for u in urunler:
-            # Resim ismini büyük harfe çevir (KAMPANYA1.PNG için)
+            # RESİM DÜZELTME: İsimleri büyük harfe çevir (KAMPANYA1.PNG için)
             resim_adi = str(u.get('resim', 'YOK.PNG')).strip().upper()
             u['resim'] = resim_adi
             
@@ -87,7 +89,7 @@ def login():
 @app.route('/siparis_tamamla', methods=['POST'])
 def siparis_tamamla():
     if 'bayi' not in session:
-        return jsonify({"durum": "hata", "mesaj": "Oturum kapalı"}), 401
+        return jsonify({"durum": "hata", "message": "Oturum kapalı"}), 401
     
     veriler = request.json
     sepet = veriler.get('sepet', '')
@@ -95,7 +97,7 @@ def siparis_tamamla():
     if siparis_maili_gonder(session['bayi'], sepet):
         return jsonify({"durum": "basarili"})
     else:
-        return jsonify({"durum": "hata", "mesaj": "Mail iletilemedi."})
+        return jsonify({"durum": "hata", "message": "Mail gönderilemedi."})
 
 @app.route('/cikis')
 def logout():
