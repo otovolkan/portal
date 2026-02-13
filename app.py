@@ -6,7 +6,10 @@ import json
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = "oto_volkan_b2b_v2026"
+app.secret_key = "oTO959595-"
+
+GMAIL_ADRESIM = "voxoraku@gmail.com" 
+GMAIL_SIFREM = "gpml fttc uzzu zvaa" # Google'dan aldığın 16 haneli uygulama şifresi
 
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
