@@ -1,20 +1,88 @@
-import os
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import pandas as pd
-from flask import Flask
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
 
 app = Flask(__name__)
+app.secret_key = 'Oto959595-'
+
+# --- GMAIL AYARLARIN ---
+GMAIL_ADRESIM = "voxoraku@gmail.com" 
+GMAIL_SIFREM = "gpml fttc uzzu zvaa" # 16 haneli uygulama şifren
+
+def verileri_getir():
+    try:
+        # Az önce test ettiğimiz ve çalışan okuma yöntemi
+        df = pd.read_excel('urunler.xlsx')
+        df = df.fillna('') # Boş hücreleri temizle
+        urun_listesi = df.to_dict(orient='records')
+        
+        # Resim isimlerini büyük harf yaparak eşleştiriyoruz
+        for urun in urun_listesi:
+            if 'resim' in urun and urun['resim'] != '':
+                urun['resim'] = str(urun['resim']).strip().upper()
+            else:
+                urun['resim'] = 'YOK.PNG'
+        return urun_listesi
+    except Exception as e:
+        print(f"Excel Okuma Hatası: {e}")
+        return []
 
 @app.route('/')
-def test():
-    dosyalar = os.listdir('.') # Klasördeki her şeyi listeler
-    if 'urunler.xlsx' in dosyalar:
-        try:
-            df = pd.read_excel('urunler.xlsx')
-            return f"Excel bulundu ve okundu! Toplam {len(df)} ürün var."
-        except Exception as e:
-            return f"Excel bulundu ama okuma hatası: {e}"
-    else:
-        return f"HATA: urunler.xlsx dosyası sunucuda bulunamadı! Mevcut dosyalar: {dosyalar}"
+def home():
+    if 'bayi' not in session:
+        return redirect(url_for('login'))
+    
+    urunler = verileri_getir()
+    # Markaları Excel'den otomatik çekiyoruz
+    markalar = sorted(list(set([str(u.get('marka', 'Diğer')) for u in urunler if u.get('marka')])))
+    
+    return render_template('index.html', urunler=urunler, bayi=session['bayi'], markalar=markalar)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        bayi_kodu = request.form.get('bayi_kodu')
+        if bayi_kodu:
+            session['bayi'] = bayi_kodu
+            return redirect(url_for('home'))
+    return render_template('login.html')
+
+@app.route('/siparis_tamamla', methods=['POST'])
+def siparis_tamamla():
+    if 'bayi' not in session:
+        return jsonify({"durum": "hata"}), 401
+    
+    veriler = request.json
+    sepet = veriler.get('sepet', '')
+    
+    if siparis_maili_gonder(session['bayi'], sepet):
+        return jsonify({"durum": "basarili"})
+    return jsonify({"durum": "hata"})
+
+def siparis_maili_gonder(bayi_adi, sepet_detay):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = GMAIL_ADRESIM
+        msg['To'] = GMAIL_ADRESIM
+        msg['Subject'] = f"YENİ SİPARİŞ: {bayi_adi}"
+        msg.attach(MIMEText(f"Bayi: {bayi_adi}\n\nSipariş Detayı:\n{sepet_detay}", 'plain', 'utf-8'))
+        
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(GMAIL_ADRESIM, GMAIL_SIFREM)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except:
+        return False
+
+@app.route('/cikis')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True)
