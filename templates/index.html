@@ -2,26 +2,28 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>OTO VOLKAN PORTAL</title>
+    <title>OTO VOLKAN B2B</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .product-img { height: 150px; object-fit: contain; }
-        .card { transition: 0.3s; border-radius: 10px; }
-        .card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .header-blue { background-color: #0066ff; color: white; padding: 15px; }
+        .product-card { border: 1px solid #ddd; padding: 10px; text-align: center; height: 100%; }
+        .product-img { height: 150px; object-fit: contain; width: 100%; }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<nav class="navbar navbar-dark bg-dark px-4">
-    <a class="navbar-brand">OTO VOLKAN B2B</a>
-    <span class="navbar-text text-white">Hoş geldin: {{ bayi }} | <a href="/cikis" class="btn btn-danger btn-sm">Çıkış</a></span>
-</nav>
+<div class="header-blue">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <h3>OTO VOLKAN B2B</h3>
+        <div>Hoş Geldin: {{ bayi }} | <a href="/cikis" class="btn btn-danger btn-sm">Çıkış</a></div>
+    </div>
+</div>
 
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-md-2">
             <div class="list-group">
-                <a href="/" class="list-group-item list-group-item-action active">TÜM MARKALAR</a>
+                <a href="/" class="list-group-item list-group-item-action active">MARKALAR</a>
                 {% for m in markalar %}
                 <a href="#" class="list-group-item list-group-item-action">{{ m }}</a>
                 {% endfor %}
@@ -30,21 +32,23 @@
 
         <div class="col-md-10">
             <div class="row">
-                {% for u in urunler %}
-                <div class="col-md-3 mb-4">
-                    <div class="card h-100 text-center p-2">
-                        <img src="{{ url_for('static', filename='images/' + u.resim) }}" 
-                             class="product-img" 
-                             onerror="this.src='https://via.placeholder.com/150?text=Resim+Yok'">
-                        <div class="card-body">
-                            <h6 class="fw-bold">{{ u.urun_adi }}</h6>
-                            <p class="text-muted small">{{ u.marka }}</p>
-                            <h5 class="text-success">{{ u.fiyat }} TL</h5>
+                {% if urunler %}
+                    {% for u in urunler %}
+                    <div class="col-md-3 mb-4">
+                        <div class="product-card">
+                            <img src="{{ url_for('static', filename='images/' + u.resim) }}" 
+                                 class="product-img" 
+                                 onerror="this.src='https://via.placeholder.com/150?text=Resim+Yok'">
+                            <h6 class="mt-2">{{ u.urun_adi }}</h6>
+                            <p class="text-muted">{{ u.marka }}</p>
+                            <h5 class="text-primary">{{ u.fiyat }}</h5>
                             <button class="btn btn-primary btn-sm w-100">Sepete Ekle</button>
                         </div>
                     </div>
-                </div>
-                {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center"><h3>Ürün bulunamadı.</h3></div>
+                {% endif %}
             </div>
         </div>
     </div>
