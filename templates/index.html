@@ -1,85 +1,122 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <title>OTO VOLKAN B2B PORTAL</title>
+    <meta charset="UTF-8"><title>Oto Volkan B2B</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .header-blue { background-color: #0066ff; color: white; padding: 20px 40px; }
-        .search-box { background: white; border: 1px solid #0066ff; border-radius: 10px; padding: 25px; margin-top: -30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .product-card { border: 1px solid #eee; padding: 15px; text-align: center; height: 100%; border-radius: 12px; transition: 0.3s; }
-        .product-card:hover { border-color: #0066ff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .product-img { height: 160px; object-fit: contain; width: 100%; margin-bottom: 10px; }
-        .btn-sorgula { background-color: #0066ff; color: white; font-weight: bold; padding: 10px 40px; }
+        .brand-title { line-height: 1.1; }
+        .brand-sub { font-size: 0.8rem; letter-spacing: 1px; color: #d1d1d1; }
+        .bayi-vurgu { font-size: 0.85rem; color: #fff; margin-top: 5px; opacity: 0.9; display: block; }
+        
+        /* KAMPANYA RESİM DÜZENİ - GÜNCELLENDİ */
+        .reklam-kutu { 
+            height: 400px; /* Yükseklik 2 katına çıkarıldı */
+            overflow: hidden; 
+            border-radius: 12px; 
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: #fff;
+            border: 1px solid #dee2e6;
+        }
+        .reklam-kutu img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; /* Resmi bozmadan, kutunun içine sığdırır */
+            padding: 10px; /* Kenarlardan hafif boşluk vererek daha şık durmasını sağlar */
+        }
+
+        .modal-custom { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); }
+        .modal-content-custom { position: relative; background: #fff; margin: 5% auto; padding: 20px; width: 45%; border-radius: 12px; text-align: center; }
+        .close-btn { position: absolute; right: 15px; top: 10px; font-size: 30px; cursor: pointer; color: #000; }
     </style>
 </head>
 <body class="bg-light">
 
-<div class="header-blue">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h1 class="mb-0 fw-bold">OTO VOLKAN</h1>
-            <p class="mb-0">B2B PORTAL</p>
-            <small>Hoş Geldiniz: <strong>{{ bayi }}</strong></small>
-        </div>
-        <div>
-            <button class="btn btn-warning fw-bold px-4">SEPET (<span id="s-adet">0</span>)</button>
-            <a href="/cikis" class="btn btn-danger ms-2">Çıkış</a>
-        </div>
+<div id="imageModal" class="modal-custom" onclick="this.style.display='none'">
+    <div class="modal-content-custom" onclick="event.stopPropagation()">
+        <span class="close-btn" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
+        <h5 id="modalTitle" class="mb-3 fw-bold text-primary"></h5>
+        <img id="modalImg" src="" style="max-width:100%; border-radius:8px;">
     </div>
 </div>
 
-<div class="container mt-4">
-    <div class="search-box">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <input type="text" id="aramaInput" class="form-control form-control-lg" placeholder="Parça No veya Ürün Adı...">
-            </div>
-            <div class="col-md-4">
-                <select id="markaSec" class="form-select form-select-lg">
-                    <option value="">Tüm Markalar</option>
-                    {% for m in markalar %}
-                    <option value="{{ m }}">{{ m }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-sorgula btn-lg w-100" onclick="filtrele()">SORGULA</button>
-            </div>
+<nav class="navbar navbar-dark bg-primary shadow sticky-top py-2">
+    <div class="container border-0">
+        <div class="brand-title">
+            <a class="navbar-brand fw-bold fs-3 mb-0" href="/">OTO VOLKAN</a>
+            <div class="brand-sub fw-bold">B2B PORTAL</div>
+            <span class="bayi-vurgu">Hoş Geldiniz: <b>{{ bayi_adi }}</b></span>
+        </div>
+        <div class="d-flex align-items-center">
+            <a href="/sepetim" class="btn btn-warning btn-sm me-2 shadow-sm fw-bold px-3">🛒 SEPET ({{ sepet_sayisi }})</a>
+            <a href="/cikis" class="btn btn-danger btn-sm">Çıkış</a>
         </div>
     </div>
+</nav>
 
-    <div class="row mt-5" id="urun-grid">
-        {% for u in urunler %}
-        <div class="col-md-3 mb-4 urun-item" data-marka="{{ u.marka }}" data-ad="{{ u.urun_adi }}">
-            <div class="product-card bg-white shadow-sm">
-                <img src="{{ url_for('static', filename='images/' + u.resim) }}" class="product-img" onerror="this.src='https://via.placeholder.com/150?text=Resim+Yok'">
-                <h6 class="fw-bold">{{ u.urun_adi }}</h6>
-                <p class="text-muted small mb-1">{{ u.marka }}</p>
-                <h5 class="text-success fw-bold">{{ u.fiyat }}</h5>
-                <button class="btn btn-primary w-100 mt-2" onclick="sepeteAt('{{ u.urun_adi }}', '{{ u.fiyat }}')">Sepete Ekle</button>
-            </div>
+<div class="container mt-4">
+    <form action="/" method="GET" class="row g-2 mb-4 bg-white p-3 rounded shadow-sm border border-primary">
+        <div class="col-md-6"><input class="form-control form-control-lg" name="search" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus></div>
+        <div class="col-md-4">
+            <select name="marka" class="form-select form-select-lg">
+                <option value="">Tüm Markalar</option>
+                {% for m in markalar %}<option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+            </select>
         </div>
-        {% endfor %}
-    </div>
+        <div class="col-md-2"><button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">SORGULA</button></div>
+    </form>
+
+    {% if not arama_yapildi %}
+        <div class="row row-cols-1 row-cols-md-3 g-3">
+            {% for r in reklamlar %}
+                <div class="col">
+                    <div class="reklam-kutu">
+                        <img src="{{ url_for('static', filename='images/' + r.resim|string) }}" alt="Kampanya" onerror="this.src='https://via.placeholder.com/400x400?text=Resim+Bulunamadı'">
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-white rounded shadow-sm overflow-hidden border">
+            <table class="table table-hover align-middle mb-0 text-center">
+                <thead class="table-dark">
+                    <tr><th>Parça No</th><th>Marka</th><th class="text-start">Ürün Adı</th><th>Fiyat</th><th>Stok</th><th>İşlem</th></tr>
+                </thead>
+                <tbody>
+                    {% for p in urunler %}
+                    <tr>
+                        <td class="fw-bold text-primary">{{ p.urun_no }}</td>
+                        <td class="text-uppercase small fw-bold text-muted">{{ p.marka }}</td>
+                        <td class="text-start small">{{ p.urun_adi }}</td>
+                        <td class="text-nowrap text-success fw-bold">
+                            {% if p.indirimli_fiyat and p.indirimli_fiyat != '' %}
+                                <del class="text-muted small d-block">{{ p.fiyat }}</del>
+                                <span class="text-danger">{{ p.indirimli_fiyat }}</span>
+                            {% else %}
+                                {{ p.fiyat }}
+                            {% endif %}
+                        </td>
+                        <td>{% if p.stok|int > 0 %}<span class="text-success fw-bold small">✔ VAR</span>{% else %}<span class="text-danger fw-bold small">✖ YOK</span>{% endif %}</td>
+                        <td>
+                            <div class="btn-group shadow-sm">
+                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary btn-sm fw-bold">+ EKLE</a>
+                                <button class="btn btn-outline-secondary btn-sm fw-bold" onclick="openModal('{{ url_for('static', filename='images/' + p.resim|string) }}', '{{ p.urun_adi }}')">RESİM</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
 </div>
 
 <script>
-    let sepet = [];
-    function sepeteAt(ad, fiyat) {
-        sepet.push({ad, fiyat});
-        document.getElementById('s-adet').innerText = sepet.length;
-    }
-    function filtrele() {
-        let arama = document.getElementById('aramaInput').value.toLowerCase();
-        let marka = document.getElementById('markaSec').value;
-        document.querySelectorAll('.urun-item').forEach(el => {
-            let ad = el.getAttribute('data-ad').toLowerCase();
-            let m = el.getAttribute('data-marka');
-            let durum = ad.includes(arama) && (marka === "" || m === marka);
-            el.style.display = durum ? "block" : "none";
-        });
-    }
+function openModal(imgSrc, title) {
+    document.getElementById('modalImg').src = imgSrc;
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('imageModal').style.display = 'block';
+}
 </script>
 </body>
 </html>
