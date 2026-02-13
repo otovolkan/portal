@@ -6,11 +6,11 @@ from email.mime.multipart import MIMEMultipart
 import os
 
 app = Flask(__name__)
-app.secret_key = 'Voxor_Oto_Volkan_B2B_2026_Ozel'
+app.secret_key = 'Oto959595-'
 
 # --- GMAIL AYARLARI ---
-GMAIL_ADRESIM = "senin_epostan@gmail.com" 
-GMAIL_SIFREM = "xxxx xxxx xxxx xxxx" 
+GMAIL_ADRESIM = "voxoraku@gmail.com" 
+GMAIL_SIFREM = "xgpml fttc uzzu zvaa" 
 
 def verileri_getir():
     try:
