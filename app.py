@@ -6,44 +6,66 @@ from email.mime.multipart import MIMEMultipart
 import os
 
 app = Flask(__name__)
-app.secret_key = 'Oto959595-'
+app.secret_key = 'Oto_Volkan_Voxor_2026_Tam_Guvenlik'
 
 # --- GMAIL AYARLARI ---
+# Burayı kendi bilgilerine göre doldur ustam!
 GMAIL_ADRESIM = "voxoraku@gmail.com" 
 GMAIL_SIFREM = "gpml fttc uzzu zvaa" # Google'dan aldığın 16 haneli uygulama şifresi
-
 def verileri_hazirla():
     try:
         if not os.path.exists('urunler.xlsx'):
+            print("HATA: urunler.xlsx bulunamadı!")
             return [], []
         
-        df = pd.read_excel('urunler.xlsx')
-        df = df.fillna('') # Boş yerleri doldur
+        # Excel'i oku (openpyxl kütüphanesini kullanır)
+        df = pd.read_excel('urunler.xlsx', engine='openpyxl')
+        df = df.fillna('')
         
-        # Sütun isimlerini standart hale getiriyoruz (Boşlukları sil, küçük harf yap)
+        # Sütun isimlerini standart hale getiriyoruz
         df.columns = [str(c).strip().lower() for c in df.columns]
         
-        # Eğer sütun isimlerin Excel'de farklıysa bunları düzeltiyoruz
-        column_mapping = {
-            'ürün adı': 'urun_adi',
-            'urun adi': 'urun_adi',
-            'fiyat': 'fiyat',
-            'marka': 'marka',
-            'resim': 'resim'
+        # Excel'deki başlıkları kodla eşleştiriyoruz
+        mapping = {
+            'ürün adı': 'urun_adi', 'urun adi': 'urun_adi', 'adi': 'urun_adi', 'ad': 'urun_adi',
+            'marka': 'marka', 'brand': 'marka',
+            'fiyat': 'fiyat', 'price': 'fiyat', 'tutar': 'fiyat',
+            'resim': 'resim', 'görsel': 'resim', 'image': 'resim'
         }
-        df = df.rename(columns=column_mapping)
+        df = df.rename(columns=mapping)
         
         urunler = df.to_dict(orient='records')
         
-        # Resim isimlerini BÜYÜK harf yap (KAMPANYA1.PNG için)
         for u in urunler:
-            u['resim'] = str(u.get('resim', 'YOK.PNG')).strip().upper()
+            # Resim ismini büyük harfe çevir (KAMPANYA1.PNG için)
+            resim_adi = str(u.get('resim', 'YOK.PNG')).strip().upper()
+            u['resim'] = resim_adi
             
         markalar = sorted(list(set([str(u.get('marka', '')) for u in urunler if u.get('marka')])))
         return urunler, markalar
     except Exception as e:
-        print(f"Hata: {e}")
+        print(f"Excel Okuma Hatası: {e}")
         return [], []
+
+def siparis_maili_gonder(bayi_adi, sepet_detay):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = GMAIL_ADRESIM
+        msg['To'] = GMAIL_ADRESIM # Siparişler sana gelsin
+        msg['Subject'] = f"YENİ B2B SİPARİŞİ: {bayi_adi}"
+
+        icerik = f"Sayın Yönetici,\n\n{bayi_adi} bayisinden yeni sipariş geldi.\n\nSİPARİŞ İÇERİĞİ:\n{sepet_detay}\n\nLütfen en kısa sürede işleme alınız."
+        msg.attach(MIMEText(icerik, 'plain', 'utf-8'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(GMAIL_ADRESIM, GMAIL_SIFREM)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Mail gönderme hatası: {e}")
+        return False
 
 @app.route('/')
 def home():
@@ -64,10 +86,16 @@ def login():
 
 @app.route('/siparis_tamamla', methods=['POST'])
 def siparis_tamamla():
-    if 'bayi' not in session: return jsonify({"durum": "hata"}), 401
+    if 'bayi' not in session:
+        return jsonify({"durum": "hata", "mesaj": "Oturum kapalı"}), 401
     
-    # Sipariş maili gönderme kısmı (İsteğe bağlı, istersen aktif et)
-    return jsonify({"durum": "basarili"})
+    veriler = request.json
+    sepet = veriler.get('sepet', '')
+    
+    if siparis_maili_gonder(session['bayi'], sepet):
+        return jsonify({"durum": "basarili"})
+    else:
+        return jsonify({"durum": "hata", "mesaj": "Mail iletilemedi."})
 
 @app.route('/cikis')
 def logout():
