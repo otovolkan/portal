@@ -14,6 +14,7 @@ GMAIL_SIFREM = "gpml fttc uzzu zvaa" # Google'dan aldığın 16 haneli uygulama 
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
     try:
+        # engine='openpyxl' ekleyerek Excel okumayı sağlama alıyoruz
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
     except: return []
@@ -39,15 +40,22 @@ def ana_sayfa():
     if not session.get('giris_yapildi'): return redirect(url_for('login'))
     arama = request.args.get('search', '').lower()
     secili_marka = request.args.get('marka', '')
-    items = verileri_yukle('urunler')
-    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and u['urun_no'] != 'REKLAM'])))
     
-    reklamlar = [u for u in items if u['urun_no'] == 'REKLAM']
+    # Verileri yüklüyoruz
+    items = verileri_yukle('urunler')
+    
+    # REKLAM satırlarını yakalarken gizli boşlukları temizliyoruz (.strip() ve .upper() ile)
+    # Bu düzeltme KAMPANYA2 ve 3'ün listeden düşmesini engeller.
+    reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper() == 'REKLAM']
+    
+    # Ürün listesi için filtreleme (Reklam olmayanlar)
+    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and str(u['urun_no']).strip().upper() != 'REKLAM'])))
+    
     urunler = []
     arama_yapildi = (arama != '' or secili_marka != '')
 
     if arama_yapildi:
-        urunler = [u for u in items if u['urun_no'] != 'REKLAM']
+        urunler = [u for u in items if str(u.get('urun_no', '')).strip().upper() != 'REKLAM']
         if arama:
             urunler = [u for u in urunler if arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()]
         if secili_marka:
