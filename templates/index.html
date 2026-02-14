@@ -15,6 +15,7 @@
             border: 1px solid #dee2e6;
         }
         .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; }
+        .bayi-vurgu { font-size: 0.85rem; color: #fff; }
     </style>
 </head>
 <body class="bg-light">
@@ -22,16 +23,16 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="/">
-            <div class="brand-title fw-bold">
+            <div class="brand-title fw-bold text-white">
                 <span class="fs-3 d-block">OTO VOLKAN</span>
-                <span class="brand-sub">B2B PORTAL</span>
+                <span style="font-size:0.8rem;">B2B PORTAL</span>
             </div>
         </a>
         <div class="ms-auto text-end">
             <span class="bayi-vurgu">Bayi: {{ bayi_adi }}</span>
             <div class="mt-2">
-                <button class="btn btn-warning fw-bold btn-sm shadow-sm">🛒 SEPETİM ({{ sepet_sayisi }})</button>
-                <a href="/cikis" class="btn btn-danger btn-sm fw-bold shadow-sm ms-2">ÇIKIŞ</a>
+                <button class="btn btn-warning fw-bold btn-sm">🛒 SEPETİM ({{ sepet_sayisi }})</button>
+                <a href="/cikis" class="btn btn-danger btn-sm ms-2">ÇIKIŞ</a>
             </div>
         </div>
     </div>
@@ -39,24 +40,26 @@
 
 <div class="container mt-4">
     <div class="row">
-        {% for r in reklamlar %}
-        <div class="col-md-4">
-            <div class="reklam-kutu">
-                <img src="{{ url_for('static', filename='images/' + r.resim|string) }}" 
-                     onerror="this.src='https://via.placeholder.com/400x400?text=Reklam+Yok'">
+        {% if reklamlar %}
+            {% for r in reklamlar %}
+            <div class="col-md-4">
+                <div class="reklam-kutu">
+                    <img src="{{ url_for('static', filename='images/' + r.resim|string) }}" 
+                         onerror="this.src='https://via.placeholder.com/400x400?text=Reklam+Resmi+Bulunamadi'">
+                </div>
             </div>
-        </div>
-        {% endfor %}
+            {% endfor %}
+        {% endif %}
     </div>
 
     <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary-subtle">
         <form action="/" method="get" class="row g-3 align-items-end">
             <div class="col-md-5">
-                <label class="form-label fw-bold text-primary">Ürün Arama (Adı veya Parça No)</label>
-                <input type="text" name="search" class="form-control" placeholder="Örn: Voxor 72Ah" value="{{ request.args.get('search', '') }}">
+                <label class="form-label fw-bold text-primary">Ürün Arama</label>
+                <input type="text" name="search" class="form-control" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-bold text-primary">Marka Seçimi</label>
+                <label class="form-label fw-bold text-primary">Marka</label>
                 <select name="marka" class="form-select">
                     <option value="">Tüm Markalar</option>
                     {% for m in markalar %}
@@ -65,7 +68,7 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">ÜRÜNÜ SORGULA</button>
+                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">ÜRÜNÜ SORGULA</button>
             </div>
         </form>
     </div>
@@ -83,11 +86,11 @@
                     <tr>
                         <td>
                             <img src="{{ url_for('static', filename='images/' + p.resim|string) }}" 
-                                 width="60" class="rounded border cursor-pointer" 
+                                 width="60" class="rounded border" style="cursor:pointer;"
                                  onclick="openModal(this.src, '{{ p.urun_adi }}')">
                         </td>
-                        <td class="fw-bold text-secondary">{{ p.urun_no }}</td>
-                        <td class="fw-bold">{{ p.urun_adi }}</td>
+                        <td class="fw-bold">{{ p.urun_no }}</td>
+                        <td>{{ p.urun_adi }}</td>
                         <td><span class="badge bg-secondary">{{ p.marka }}</span></td>
                         <td class="fw-bold text-primary">{{ p.fiyat }}</td>
                         <td>{% if p.stok|int > 0 %}<span class="text-success fw-bold">✔ VAR</span>{% else %}<span class="text-danger fw-bold">✖ YOK</span>{% endif %}</td>
