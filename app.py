@@ -9,11 +9,12 @@ app = Flask(__name__)
 app.secret_key = "oTO959595-"
 
 GMAIL_ADRESIM = "voxoraku@gmail.com" 
-GMAIL_SIFREM = "gpml fttc uzzu zvaa"
+GMAIL_SIFREM = "gpml fttc uzzu zvaa" 
 
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
     try:
+        # engine='openpyxl' Render'da Excel okumayı garantiler
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
     except: return []
@@ -38,19 +39,17 @@ def ana_sayfa():
     
     items = verileri_yukle('urunler')
     
-    # REKLAM ÇÖZÜMÜ: urun_no içinde "REKLAM" kelimesi geçen TÜM satırları alıyoruz.
-    # Bu sayede REKLAM1, REKLAM2 veya hepsi REKLAM olsa bile tamamını listeye ekler.
-    reklamlar = [u for u in items if "REKLAM" in str(u.get('urun_no', '')).upper()]
+    # KESİN ÇÖZÜM: urun_no sütunu 'REKLAM' ile başlayan HER ŞEYİ listeye al.
+    reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
     
-    # Markaları çekerken reklam satırlarını hariç tutuyoruz
-    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and "REKLAM" not in str(u.get('urun_no', '')).upper()])))
+    # Markaları çekerken reklamları hariç tut
+    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')])))
     
     urunler = []
     arama_yapildi = (arama != '' or secili_marka != '')
 
     if arama_yapildi:
-        # Aramada reklamları göstermiyoruz
-        urunler = [u for u in items if "REKLAM" not in str(u.get('urun_no', '')).upper()]
+        urunler = [u for u in items if not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
         if arama:
             urunler = [u for u in urunler if arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()]
         if secili_marka:
