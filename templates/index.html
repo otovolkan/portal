@@ -5,6 +5,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .brand-title { line-height: 1.1; }
+        .brand-sub { font-size: 0.8rem; letter-spacing: 1px; color: #d1d1d1; }
+        .bayi-vurgu { font-size: 0.85rem; color: #fff; margin-top: 5px; opacity: 0.9; display: block; }
+        
         .reklam-kutu { 
             height: 400px; 
             overflow: hidden; 
@@ -14,23 +17,30 @@
             background: #fff;
             border: 1px solid #dee2e6;
         }
-        .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; }
+        .reklam-kutu img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain;
+            padding: 10px;
+        }
     </style>
 </head>
 <body class="bg-light">
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3">
-    <div class="container d-flex justify-content-between">
+    <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="/">
-            <div class="brand-title fw-bold text-white">
-                <span class="fs-3 d-block">OTO VOLKAN</span>
-                <span style="font-size: 0.8rem;">B2B PORTAL</span>
+            <div class="brand-title fw-bold">
+                <span class="fs-3 d-block text-white">OTO VOLKAN</span>
+                <span class="brand-sub">B2B PORTAL</span>
             </div>
         </a>
-        <div class="text-end text-white">
-            <small>Bayi: {{ bayi_adi }}</small><br>
-            <button class="btn btn-warning btn-sm fw-bold shadow-sm">🛒 SEPETİM ({{ sepet_sayisi }})</button>
-            <a href="/cikis" class="btn btn-danger btn-sm ms-2 fw-bold shadow-sm">ÇIKIŞ</a>
+        <div class="ms-auto text-end">
+            <span class="bayi-vurgu text-white">Bayi: {{ bayi_adi }}</span>
+            <div class="mt-2">
+                <button class="btn btn-warning fw-bold btn-sm shadow-sm">🛒 SEPETİM ({{ sepet_sayisi }})</button>
+                <a href="/cikis" class="btn btn-danger btn-sm fw-bold shadow-sm ms-2">ÇIKIŞ</a>
+            </div>
         </div>
     </div>
 </nav>
@@ -39,9 +49,9 @@
     <div class="row">
         {% for r in reklamlar %}
         <div class="col-md-4">
-            <div class="reklam-kutu">
+            <div class="reklam-kutu shadow-sm bg-white">
                 <img src="{{ url_for('static', filename='images/' + r.resim|string) }}" 
-                     onerror="this.src='https://via.placeholder.com/400x400?text=Resim+Yok'">
+                     onerror="this.src='https://via.placeholder.com/400x400?text=Reklam+Resmi+Yok'">
             </div>
         </div>
         {% endfor %}
@@ -50,12 +60,12 @@
     <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary-subtle">
         <form action="/" method="get" class="row g-3 align-items-end">
             <div class="col-md-5">
-                <label class="form-label fw-bold">Ürün Arama</label>
-                <input type="text" name="search" class="form-control" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}">
+                <label class="form-label fw-bold text-primary small">Ürün Arama (Adı veya Parça No)</label>
+                <input type="text" name="search" class="form-control form-control-lg shadow-sm" placeholder="Örn: Voxor 72Ah" value="{{ request.args.get('search', '') }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-bold">Marka Seçimi</label>
-                <select name="marka" class="form-select">
+                <label class="form-label fw-bold text-primary small">Marka Seçimi</label>
+                <select name="marka" class="form-select form-select-lg shadow-sm">
                     <option value="">Tüm Markalar</option>
                     {% for m in markalar %}
                     <option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>
@@ -63,33 +73,56 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm py-2">SORGULA</button>
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow-sm">ÜRÜNÜ SORGULA</button>
             </div>
         </form>
     </div>
 
     {% if arama_yapildi %}
-        <div class="table-responsive bg-white rounded-3 shadow-sm border">
+        <div class="table-responsive bg-white rounded-3 shadow-sm border border-secondary-subtle">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-dark">
-                    <tr>
-                        <th>Görsel</th><th>Ürün No</th><th>Ürün Adı</th><th>Marka</th><th>Fiyat</th><th>Stok</th><th>İşlem</th>
+                    <tr class="text-center">
+                        <th style="width: 80px;">Görsel</th>
+                        <th>Ürün No</th>
+                        <th>Ürün Adı</th>
+                        <th>Marka</th>
+                        <th>Fiyat (KDV Dahil)</th>
+                        <th>Stok Durumu</th>
+                        <th style="width: 150px;">İşlem</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="text-center">
                     {% for p in urunler %}
                     <tr>
                         <td>
                             <img src="{{ url_for('static', filename='images/' + p.resim|string) }}" 
-                                 width="60" class="rounded border" style="cursor:pointer;"
+                                 width="60" height="60" class="rounded border cursor-pointer object-fit-contain bg-light"
                                  onclick="openModal(this.src, '{{ p.urun_adi }}')">
                         </td>
-                        <td class="fw-bold text-secondary">{{ p.urun_no }}</td>
-                        <td class="fw-bold">{{ p.urun_adi }}</td>
-                        <td><span class="badge bg-secondary">{{ p.marka }}</span></td>
-                        <td class="fw-bold text-primary">{{ p.fiyat }}</td>
-                        <td>{% if p.stok|int > 0 %}<span class="text-success fw-bold">✔ VAR</span>{% else %}<span class="text-danger fw-bold">✖ YOK</span>{% endif %}</td>
-                        <td><a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary btn-sm fw-bold">+ EKLE</a></td>
+                        <td class="fw-bold text-secondary small">{{ p.urun_no }}</td>
+                        <td class="fw-bold text-dark">{{ p.urun_adi }}</td>
+                        <td><span class="badge bg-secondary px-3 py-2">{{ p.marka }}</span></td>
+                        <td class="fw-bold text-primary fs-5">
+                            {% if p.indirimli_fiyat and p.indirimli_fiyat != '' %}
+                                <del class="text-muted small d-block" style="font-size: 0.8rem;">{{ p.fiyat }}</del>
+                                <span class="text-danger">{{ p.indirimli_fiyat }}</span>
+                            {% else %}
+                                {{ p.fiyat }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if p.stok|int > 0 %}
+                                <span class="text-success fw-bold small">✔ VAR</span>
+                            {% else %}
+                                <span class="text-danger fw-bold small">✖ YOK</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group shadow-sm">
+                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary btn-sm fw-bold px-3">+ EKLE</a>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -98,10 +131,11 @@
     {% endif %}
 </div>
 
-<div id="imageModal" class="modal" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8);" onclick="this.style.display='none'">
-    <div style="max-width:80%; max-height:80%; margin:auto; margin-top:5%; background:#fff; border-radius:10px; padding:10px; text-align:center;">
-        <h5 id="modalTitle"></h5>
-        <img id="modalImg" src="" style="max-width:100%; max-height:70vh;">
+<div id="imageModal" class="modal" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85);" onclick="this.style.display='none'">
+    <div style="max-width:80%; max-height:85%; margin:auto; margin-top:3%; background:#fff; border-radius:15px; padding:15px; position:relative; text-align:center; box-shadow:0 0 30px rgba(0,0,0,0.5);">
+        <h5 id="modalTitle" class="mb-3 fw-bold text-primary"></h5>
+        <img id="modalImg" src="" style="max-width:100%; max-height:70vh; border-radius:8px; object-fit:contain;">
+        <div class="mt-3 text-muted small">Kapatmak için herhangi bir yere tıklayın.</div>
     </div>
 </div>
 
