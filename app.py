@@ -2,23 +2,22 @@ from flask import Flask, render_template, request, session, redirect, url_for
 import pandas as pd
 import os
 import re
+import json
 from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "oTO959595-"
 
 GMAIL_ADRESIM = "voxoraku@gmail.com" 
-GMAIL_SIFREM = "gpml fttc uzzu zvaa" 
+GMAIL_SIFREM = "gpml fttc uzzu zvaa"
 
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
     try:
-        # Render'da en kararlı okuma yöntemi
+        # engine='openpyxl' Render'da Excel okumayı garantiler
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
-    except Exception as e:
-        print(f"Excel Hatası: {e}")
-        return []
+    except: return []
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -39,17 +38,17 @@ def ana_sayfa():
     secili_marka = request.args.get('marka', '')
     items = verileri_yukle('urunler')
     
-    # REKLAM ÇÖZÜMÜ: urun_no içerisinde 'REKLAM' geçen HER ŞEYİ alıyoruz.
-    reklamlar = [u for u in items if "REKLAM" in str(u.get('urun_no', '')).upper()]
+    # REKLAM ÇÖZÜMÜ: urun_no sütunu 'REKLAM' ile başlayan HER ŞEYİ listeye al (REKLAM1, REKLAM2, REKLAM3...)
+    reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
     
-    # Markaları çekerken reklam satırlarını ayıklıyoruz.
-    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and "REKLAM" not in str(u.get('urun_no', '')).upper()])))
+    # Markaları çekerken reklamları listeden çıkar
+    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')])))
     
     urunler = []
     arama_yapildi = (arama != '' or secili_marka != '')
 
     if arama_yapildi:
-        urunler = [u for u in items if "REKLAM" not in str(u.get('urun_no', '')).upper()]
+        urunler = [u for u in items if not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
         if arama:
             urunler = [u for u in urunler if arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()]
         if secili_marka:
