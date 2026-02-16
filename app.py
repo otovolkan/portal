@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, session, redirect, url_for
 import pandas as pd
 import os
 import re
-import json
 from datetime import datetime
 
 app = Flask(__name__)
@@ -14,10 +13,12 @@ GMAIL_SIFREM = "gpml fttc uzzu zvaa"
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
     try:
-        # engine='openpyxl' Render üzerinde en güvenli okuma yöntemidir
+        # engine='openpyxl' Render'da kesinlikle olmalı
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
-    except: return []
+    except Exception as e:
+        print(f"Hata: {e}")
+        return []
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -38,18 +39,16 @@ def ana_sayfa():
     
     items = verileri_yukle('urunler')
     
-    # KESİN ÇÖZÜM: 'REKLAM' içeren TÜM satırları bir liste (çuval) içine topluyoruz.
-    # Eskiden sadece tek bir satıra bakıyordu, şimdi 'REKLAM' ile başlayan her şeyi alıyor.
-    reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
+    # REKLAM ÇÖZÜMÜ: urun_no'su REKLAM olan TÜM satırları alıyoruz.
+    reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper() == 'REKLAM']
     
-    # Markaları çekerken reklam satırlarını listeden ayıklıyoruz.
-    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')])))
+    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and str(u.get('urun_no', '')).strip().upper() != 'REKLAM'])))
     
     urunler = []
     arama_yapildi = (arama != '' or secili_marka != '')
 
     if arama_yapildi:
-        urunler = [u for u in items if not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
+        urunler = [u for u in items if str(u.get('urun_no', '')).strip().upper() != 'REKLAM']
         if arama:
             urunler = [u for u in urunler if arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()]
         if secili_marka:
