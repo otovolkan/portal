@@ -7,14 +7,14 @@ app = Flask(__name__)
 app.secret_key = "oTO959595-"
 
 def format_fiyat(deger):
-    """Excel'deki karışık rakamları (128.4 veya '152,00 EURO') jilet gibi formata sokar."""
+    """Excel'deki karışık rakamları ve EURO/TL ayrımını jilet gibi yapar."""
     if not deger: return "0,00 TL"
-    s = str(deger).upper()
+    s = str(deger).upper().strip()
     
-    # Para birimini belirle (Default TL)
+    # Para birimini belirle: Eğer içinde EURO veya € geçiyorsa EURO, yoksa TL
     birim = "EURO" if ("EURO" in s or "€" in s) else "TL"
     
-    # Rakam dışındaki her şeyi temizle (nokta ve virgül kalsın)
+    # Rakam dışındaki her şeyi temizle (sadece rakam, nokta ve virgül kalsın)
     sayi_metin = re.sub(r'[^\d,.]', '', s)
     if not sayi_metin: return f"0,00 {birim}"
     
@@ -27,7 +27,7 @@ def format_fiyat(deger):
         else:
             sayi = float(sayi_metin)
         
-        # 1.250,50 formatında geri döndür
+        # Jilet gibi 1.250,50 formatında geri döndür
         return f"{sayi:,.2f} {birim}".replace(',', 'X').replace('.', ',').replace('X', '.')
     except:
         return f"{deger} {birim}"
@@ -68,8 +68,8 @@ def ana_sayfa():
     secili_marka = request.args.get('marka', '')
     items = verileri_yukle('urunler')
     
-    # Katalogdaki tüm ürünlerin fiyatlarını formatlıyoruz
     for item in items:
+        # Katalogda görünecek formatlı fiyat
         item['fiyat_gosterim'] = format_fiyat(item.get('fiyat'))
         if item.get('indirimli_fiyat'):
             item['indirimli_gosterim'] = format_fiyat(item.get('indirimli_fiyat'))
