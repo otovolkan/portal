@@ -15,21 +15,27 @@ def verileri_yukle(sayfa_adi):
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
     except Exception as e:
-        print(f"Hata: {e}")
+        print(f"Excel Okuma Hatası ({sayfa_adi}): {e}")
         return []
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Bayi kodunu temizleyip alıyoruz
-        girilen_kod = request.form.get('bayi_kodu', '').strip().lower()
+        # Kullanıcının girdiği kodu temizliyoruz
+        girilen_kod = str(request.form.get('bayi_kodu', '')).strip().lower()
         bayiler = verileri_yukle('bayiler')
         
-        # Bayi eşleştirmesi
-        bayi = next((b for b in bayiler if str(b.get('bayi_kodu', '')).strip().lower() == girilen_kod), None)
+        # KRİTİK: Bayi listesini tararken sütun isimlerindeki olası hataları (boşluk vb) eliyoruz
+        bayi = None
+        for b in bayiler:
+            # Excel'deki bayi_kodu sütununu bulmaya çalışıyoruz
+            b_kod = str(b.get('bayi_kodu', '')).strip().lower()
+            if b_kod == girilen_kod:
+                bayi = b
+                break
         
         if bayi:
-            session.clear() # Eski hatalı oturumları ve 1900 adet hatasını temizler
+            session.clear() # 1900 hatasını ve eski oturumları temizler
             session.update({
                 'giris_yapildi': True, 
                 'bayi_adi': bayi.get('bayi_adi', 'Değerli Bayimiz'), 
@@ -46,7 +52,7 @@ def ana_sayfa():
     secili_marka = request.args.get('marka', '')
     items = verileri_yukle('urunler')
     
-    # Reklamlar ve Markalar
+    # Reklamlar ve Markalar (Tasarımını bozmamak için REKLAM mantığını koruyoruz)
     reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
     markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')])))
     
