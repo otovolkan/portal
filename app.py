@@ -20,7 +20,7 @@ def format_fiyat(deger, para_birimi_kolonu="", marka=""):
     # PARA BİRİMİ TESPİTİ (Öncelik sırasına göre):
     # 1. Excel'deki yeni sütun dolu mu? (TL/EURO)
     # 2. Fiyat metninde simge var mı?
-    # 3. Marka Banner mı? (Geriye dönük uyumluluk için)
+    # 3. Marka Banner mı?
     if pb_kolon in ["TL", "EURO", "TRY", "EUR", "€", "₺"]:
         birim = "EURO" if pb_kolon in ["EURO", "EUR", "€"] else "TL"
     elif "EURO" in fiyat_str or "€" in fiyat_str or "BANNER" in marka_ust:
@@ -61,14 +61,16 @@ def verileri_yukle(sayfa_adi):
     try:
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
-    except: return []
+    except Exception as e:
+        print(f"Excel Okuma Hatası: {e}")
+        return []
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         girilen_kod = str(request.form.get('bayi_kodu', '')).strip().lower()
         bayiler = verileri_yukle('bayiler')
-        bayi = next((b for b in bayiler if str(b.get('bayi_kodu','')).strip().lower() == girilen_kod), None)
+        bayi = next((b for b in bayiler if str(b.get('bayi_kodu', '')).strip().lower() == girilen_kod), None)
         if bayi:
             session.clear()
             session.update({'giris_yapildi': True, 'bayi_adi': bayi['bayi_adi'], 'sepet': {}})
