@@ -1,76 +1,114 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <title>Sipariş Özeti - Oto Volkan</title>
+    <meta charset="UTF-8"><title>Oto Volkan B2B Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .table thead th { background-color: #f8f9fa; color: #333; font-weight: bold; border-bottom: 2px solid #dee2e6; }
-        .genel-toplam-text { color: #666; font-size: 1.2rem; }
-        .genel-toplam-fiyat { color: #157347; font-size: 2.2rem; font-weight: bold; }
-        .btn-whatsapp { background-color: #198754; color: white; font-weight: bold; padding: 12px 30px; border-radius: 8px; font-size: 1.1rem; }
-        .btn-kaldir { background-color: #dc3545; color: white; border-radius: 5px; font-weight: bold; padding: 5px 15px; border: none; text-decoration: none; }
+        .brand-title { line-height: 1.1; }
+        .brand-sub { font-size: 0.8rem; letter-spacing: 1px; color: #d1d1d1; font-weight: bold; }
+        .bayi-vurgu { font-size: 0.85rem; color: #fff; margin-top: 5px; opacity: 0.9; display: block; }
+        .reklam-kutu { height: 400px; overflow: hidden; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #fff; border: 1px solid #dee2e6; }
+        .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; padding: 15px; }
+        .modal-custom { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); }
+        .modal-content-custom { position: relative; background: #fff; margin: 3% auto; padding: 20px; width: 50%; border-radius: 15px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
     </style>
 </head>
-<body class="bg-white">
+<body class="bg-light">
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold"><span class="me-2">🛒</span> Sipariş Özeti</h2>
-        <a href="/" class="btn btn-outline-primary btn-sm fw-bold">⬅ Kataloğa Dön</a>
-    </div>
-
-    <div class="table-responsive">
-        <table class="table align-middle text-center">
-            <thead>
-                <tr>
-                    <th class="text-start">Ürün</th>
-                    <th>Miktar</th>
-                    <th>Birim (KDVli)</th>
-                    <th>Ara Toplam</th>
-                    <th>İşlem</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in sepet %}
-                <tr>
-                    <td class="text-start fw-bold text-uppercase">{{ p.urun_adi }} ({{ p.urun_no }})</td>
-                    <td>{{ p.miktar }} adet</td>
-                    <td>{{ p.fiyat }}</td>
-                    <td class="fw-bold text-dark">{{ p.ara_toplam }}</td>
-                    <td>
-                        <a href="{{ url_for('sepet_sil', urun_no=p.urun_no) }}" class="btn-kaldir">Kaldır</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="text-end mt-4">
-        <div class="genel-toplam-text">Genel Toplam</div>
-        <div class="genel-toplam-fiyat">{{ genel_toplam }}</div>
-        <div class="text-muted small mb-4">(Fiyatlara %20 KDV dahildir)</div>
-        
-        <button onclick="whatsappGonder()" class="btn btn-whatsapp shadow">SİPARİŞİ WHATSAPP İLE GÖNDER</button>
+<div id="imageModal" class="modal-custom" onclick="this.style.display='none'">
+    <div class="modal-content-custom" onclick="event.stopPropagation()">
+        <h5 id="modalTitle" class="mb-3 fw-bold text-primary fs-4"></h5>
+        <img id="modalImg" src="" style="max-width:100%; max-height: 70vh; border-radius:10px; object-fit: contain;">
     </div>
 </div>
 
+<nav class="navbar navbar-dark bg-primary shadow sticky-top py-3">
+    <div class="container border-0 text-white">
+        <div class="brand-title">
+            <a class="navbar-brand fw-bold fs-2 mb-0" href="/">OTO VOLKAN</a>
+            <div class="brand-sub">B2B YEDEK PARÇA SİSTEMİ</div>
+            <span class="bayi-vurgu">Hoş Geldiniz: <b class="text-warning">{{ bayi_adi }}</b></span>
+        </div>
+        <div class="d-flex align-items-center">
+            <a href="/sepetim" class="btn btn-warning btn-lg me-3 shadow-sm fw-bold px-4 position-relative">
+                🛒 SEPETİM 
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ sepet_sayisi }}
+                </span>
+            </a>
+            <a href="/cikis" class="btn btn-outline-light fw-bold shadow-sm">ÇIKIŞ YAP</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row">
+        {% if not arama_yapildi %}
+            {% for r in reklamlar %}
+            <div class="col-md-4">
+                <div class="reklam-kutu shadow"><img src="{{ url_for('static', filename='images/' + r.resim|string) }}" onerror="this.src='https://via.placeholder.com/400x400?text=Resim+Yok'"></div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary border-2">
+        <form action="/" method="GET" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label fw-bold text-primary small text-uppercase">Ürün Arama</label>
+                <input type="text" name="search" class="form-control form-control-lg border-2" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-primary small text-uppercase">Marka Filtresi</label>
+                <select name="marka" class="form-select form-select-lg border-2">
+                    <option value="">Tüm Markalar</option>
+                    {% for m in markalar %}<option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow text-uppercase">SORGULA</button></div>
+        </form>
+    </div>
+
+    {% if arama_yapildi %}
+        <div class="bg-white rounded-4 shadow-sm overflow-hidden border">
+            <table class="table table-hover align-middle mb-0 text-center">
+                <thead class="table-dark py-3">
+                    <tr><th>GÖRSEL</th><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>MARKA</th><th>FİYAT</th><th>STOK</th><th>İŞLEM</th></tr>
+                </thead>
+                <tbody>
+                    {% for p in urunler %}
+                    <tr style="height: 80px;">
+                        <td><img src="{{ url_for('static', filename='images/' + p.resim|string) }}" width="60" height="60" class="rounded border cursor-pointer" onclick="openModal(this.src, '{{ p.urun_adi }}')"></td>
+                        <td class="fw-bold text-primary fs-6">{{ p.urun_no }}</td>
+                        <td class="text-start fw-bold text-dark" style="font-size: 0.9rem;">{{ p.urun_adi }}</td>
+                        <td><span class="badge bg-secondary px-3 py-2 text-uppercase">{{ p.marka }}</span></td>
+                        <td class="fw-bold text-primary fs-5">
+                            {% if p.indirimli_fiyat and p.indirimli_fiyat != '' %}
+                                <del class="text-muted small d-block" style="font-size: 0.75rem;">{{ p.fiyat }}</del>
+                                <span class="text-danger fw-bolder">{{ p.indirimli_fiyat }}</span>
+                            {% else %}{{ p.fiyat }}{% endif %}
+                        </td>
+                        <td>{% if p.stok|int > 0 %}<span class="text-success fw-bold">✔ VAR</span>{% else %}<span class="text-danger fw-bold">✖ YOK</span>{% endif %}</td>
+                        <td>
+                            <div class="btn-group shadow-sm">
+                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary fw-bold px-3">+ EKLE</a>
+                                <button class="btn btn-outline-dark fw-bold" onclick="openModal('{{ url_for('static', filename='images/' + p.resim|string) }}', '{{ p.urun_adi }}')">GÖRSEL</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+
 <script>
-function whatsappGonder() {
-    let mesaj = "*Yeni Sipariş - OTO VOLKAN B2B*\n";
-    mesaj += "Bayi: {{ bayi_adi }}\n--------------------------\n";
-    
-    {% for p in sepet %}
-    mesaj += "• {{ p.urun_adi }} ({{ p.miktar }} Adet)\n";
-    {% endfor %}
-    
-    mesaj += "--------------------------\n*Toplam: {{ genel_toplam }}*";
-    
-    let url = "https://wa.me/905321234567?text=" + encodeURIComponent(mesaj); // Buraya kendi numaranı yaz ustam
-    window.open(url, '_blank');
+function openModal(imgSrc, title) {
+    document.getElementById('modalImg').src = imgSrc;
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('imageModal').style.display = 'block';
 }
 </script>
-
 </body>
 </html>
