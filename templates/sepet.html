@@ -3,9 +3,19 @@
 <head>
     <meta charset="UTF-8"><title>Sepetim - Oto Volkan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .bg-primary { background-color: #0d6efd !important; }
+        .table img { object-fit: contain; background: #f8f9fa; border-radius: 8px; border: 1px solid #ddd; }
+    </style>
 </head>
 <body class="bg-light">
-<nav class="navbar navbar-dark bg-primary shadow-sm py-3"><div class="container"><a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a></div></nav>
+<nav class="navbar navbar-dark bg-primary shadow-sm py-3">
+    <div class="container d-flex justify-content-between">
+        <a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN <small style="font-size: 0.7rem; opacity: 0.8;">B2B PORTAL</small></a>
+        <a href="/" class="btn btn-outline-light btn-sm fw-bold shadow-sm px-4">← ANA SAYFA</a>
+    </div>
+</nav>
+
 <div class="container mt-5">
     <div class="bg-white p-5 rounded-4 shadow border border-primary border-opacity-25">
         <h2 class="fw-bold text-primary mb-4 text-uppercase">🛒 Sipariş Listeniz</h2>
@@ -14,15 +24,15 @@
         <div class="table-responsive">
             <table class="table align-middle text-center table-hover">
                 <thead class="table-dark">
-                    <tr><th>GÖRSEL</th><th>ÜRÜN NO</th><th>ÜRÜN ADI</th><th>ADET</th><th>FİYAT</th><th>İŞLEM</th></tr>
+                    <tr><th>GÖRSEL</th><th>ÜRÜN NO</th><th class="text-start">ÜRÜN ADI</th><th>ADET</th><th>FİYAT</th><th>İŞLEM</th></tr>
                 </thead>
                 <tbody>
                     {% for p in sepet %}
                     <tr style="height: 90px;">
                         <td><img src="{{ url_for('static', filename='images/' + p.resim|string) }}" width="60" height="60" class="border rounded"></td>
                         <td class="fw-bold text-secondary">{{ p.urun_no }}</td>
-                        <td class="fw-bold text-dark">{{ p.urun_adi }}</td>
-                        <td><span class="badge bg-primary fs-5">{{ p.adet }} Adet</span></td>
+                        <td class="text-start fw-bold text-dark">{{ p.urun_adi }}</td>
+                        <td><span class="badge bg-primary fs-5 px-3 shadow-sm">{{ p.adet }} Adet</span></td>
                         <td class="fw-bold text-primary fs-5">{{ p.fiyat }}</td>
                         <td>
                             <a href="{{ url_for('sepet_sil', urun_no=p.urun_no) }}" class="btn btn-danger btn-md fw-bold shadow-sm px-4 rounded-pill">🗑️ KALDIR</a>
@@ -32,7 +42,17 @@
                 </tbody>
             </table>
         </div>
-        {% else %}<div class="text-center py-5"><h3>Sepetiniz Boş</h3><a href="/" class="btn btn-primary mt-3 px-5 fw-bold shadow">Kataloğa Git</a></div>{% endif %}
+        <div class="text-end mt-5 border-top pt-4">
+            <a href="/" class="btn btn-secondary btn-lg fw-bold px-4">← ALIŞVERİŞE DEVAM ET</a>
+            <button class="btn btn-success btn-xl fw-bold shadow-lg px-5 py-3 rounded-pill fs-4 ms-2" onclick="alert('Siparişiniz başarıyla alındı!')">SİPARİŞİ TAMAMLA</button>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <div class="fs-1 text-muted mb-3">🛒</div>
+            <h3 class="text-muted mb-4">Sepetinizde şu an ürün bulunmuyor.</h3>
+            <a href="/" class="btn btn-primary btn-lg fw-bold shadow-lg px-5 rounded-pill py-3 text-uppercase">Hemen Ürün Sorgulamaya Git</a>
+        </div>
+        {% endif %}
     </div>
 </div>
 </body>
