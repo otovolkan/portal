@@ -11,14 +11,12 @@
         .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; padding: 15px; }
         .modal-custom { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); }
         .modal-content-custom { position: relative; background: #fff; margin: 3% auto; padding: 20px; width: 50%; border-radius: 15px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-        .close-btn { position: absolute; right: 20px; top: 15px; font-size: 35px; cursor: pointer; color: #333; font-weight: bold; }
     </style>
 </head>
 <body class="bg-light">
 
 <div id="imageModal" class="modal-custom" onclick="this.style.display='none'">
     <div class="modal-content-custom" onclick="event.stopPropagation()">
-        <span class="close-btn" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
         <h5 id="modalTitle" class="mb-3 fw-bold text-primary fs-4"></h5>
         <img id="modalImg" src="" style="max-width:100%; max-height: 70vh; border-radius:10px; object-fit: contain;">
     </div>
@@ -38,7 +36,7 @@
                     {{ sepet_sayisi }}
                 </span>
             </a>
-            <a href="/cikis" class="btn btn-outline-light fw-bold shadow-sm">ÇIKIŞ</a>
+            <a href="/cikis" class="btn btn-outline-light fw-bold shadow-sm">ÇIKIŞ YAP</a>
         </div>
     </div>
 </nav>
@@ -48,7 +46,9 @@
         {% if not arama_yapildi %}
             {% for r in reklamlar %}
             <div class="col-md-4">
-                <div class="reklam-kutu shadow"><img src="{{ url_for('static', filename='images/' + r.resim|string) }}" onerror="this.src='https://via.placeholder.com/400x400?text=Resim+Yok'"></div>
+                <div class="reklam-kutu shadow">
+                    <img src="{{ url_for('static', filename='images/' + r.resim|string) }}" onerror="this.src='https://via.placeholder.com/400x400?text=Resim+Yok'">
+                </div>
             </div>
             {% endfor %}
         {% endif %}
@@ -61,13 +61,13 @@
                 <input type="text" name="search" class="form-control form-control-lg border-2" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus>
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-bold text-primary small text-uppercase">Marka</label>
+                <label class="form-label fw-bold text-primary small text-uppercase">Marka Filtresi</label>
                 <select name="marka" class="form-select form-select-lg border-2">
                     <option value="">Tüm Markalar</option>
                     {% for m in markalar %}<option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="col-md-3"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow">SORGULA</button></div>
+            <div class="col-md-3"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow text-uppercase">SORGULA</button></div>
         </form>
     </div>
 
@@ -81,19 +81,19 @@
                     {% for p in urunler %}
                     <tr style="height: 80px;">
                         <td><img src="{{ url_for('static', filename='images/' + p.resim|string) }}" width="60" height="60" class="rounded border cursor-pointer" onclick="openModal(this.src, '{{ p.urun_adi }}')"></td>
-                        <td class="fw-bold text-primary">{{ p.urun_no }}</td>
-                        <td class="text-start fw-bold text-dark small">{{ p.urun_adi }}</td>
-                        <td><span class="badge bg-secondary px-3 py-2">{{ p.marka }}</span></td>
+                        <td class="fw-bold text-primary fs-6">{{ p.urun_no }}</td>
+                        <td class="text-start fw-bold text-dark" style="font-size: 0.9rem;">{{ p.urun_adi }}</td>
+                        <td><span class="badge bg-secondary px-3 py-2 text-uppercase">{{ p.marka }}</span></td>
                         <td class="fw-bold text-primary fs-5">
                             {% if p.indirimli_fiyat and p.indirimli_fiyat != '' %}
-                                <del class="text-muted small d-block" style="font-size: 0.7rem;">{{ p.fiyat }}</del>
+                                <del class="text-muted small d-block" style="font-size: 0.75rem;">{{ p.fiyat }}</del>
                                 <span class="text-danger fw-bolder">{{ p.indirimli_fiyat }}</span>
                             {% else %}{{ p.fiyat }}{% endif %}
                         </td>
                         <td>{% if p.stok|int > 0 %}<span class="text-success fw-bold">✔ VAR</span>{% else %}<span class="text-danger fw-bold">✖ YOK</span>{% endif %}</td>
                         <td>
                             <div class="btn-group shadow-sm">
-                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary fw-bold">+ EKLE</a>
+                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary fw-bold px-3">+ EKLE</a>
                                 <button class="btn btn-outline-dark fw-bold" onclick="openModal('{{ url_for('static', filename='images/' + p.resim|string) }}', '{{ p.urun_adi }}')">GÖRSEL</button>
                             </div>
                         </td>
