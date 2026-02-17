@@ -1,6 +1,9 @@
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 import pandas as pd
 import os
+import re
+import json
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "oTO959595-"
@@ -8,27 +11,19 @@ app.secret_key = "oTO959595-"
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
     try:
-        # engine='openpyxl' Render'da çalışması için ŞARTTIR
+        # engine='openpyxl' Render'da Excel okumak için ŞARTTIR
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
-    except Exception as e:
-        print(f"Hata: {e}")
-        return []
-
-def fiyat_temizle(fiyat_str):
-    try:
-        return float(str(fiyat_str).replace('TL', '').replace('.', '').replace(',', '.').strip())
-    except:
-        return 0.0
+    except: return []
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        girilen_kod = str(request.form.get('bayi_kodu', '')).strip().lower()
+        girilen_kod = request.form['bayi_kodu'].strip().lower()
         bayiler = verileri_yukle('bayiler')
-        bayi = next((b for b in bayiler if str(b.get('bayi_kodu','')).strip().lower() == girilen_kod), None)
+        bayi = next((b for b in bayiler if str(b['bayi_kodu']).strip().lower() == girilen_kod), None)
         if bayi:
-            session.clear()
+            session.clear() 
             session.update({'giris_yapildi': True, 'bayi_adi': bayi['bayi_adi'], 'sepet': {}})
             return redirect(url_for('ana_sayfa'))
     return render_template('login.html')
@@ -53,7 +48,8 @@ def ana_sayfa():
             urunler = [u for u in urunler if str(u['marka']) == secili_marka]
     
     sepet = session.get('sepet', {})
-    sepet_sayisi = len(sepet)
+    sepet_sayisi = sum(sepet.values()) if sepet else 0
+    
     return render_template('index.html', urunler=urunler, reklamlar=reklamlar, markalar=markalar, 
                            sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], 
                            secili_marka=secili_marka, arama_yapildi=arama_yapildi)
@@ -73,28 +69,21 @@ def sepetim():
     sepet = session.get('sepet', {})
     tum_urunler = verileri_yukle('urunler')
     sepet_listesi = []
-    genel_toplam = 0
-    
     for urun_no, adet in sepet.items():
         urun = next((u for u in tum_urunler if str(u['urun_no']) == urun_no), None)
         if urun:
-            birim_fiyat = fiyat_temizle(urun.get('fiyat', 0))
-            ara_toplam = birim_fiyat * adet
-            genel_toplam += ara_toplam
-            
             u_copy = urun.copy()
-            u_copy['miktar'] = adet
-            u_copy['ara_toplam'] = f"{ara_toplam:,.2f} TL"
+            u_copy['adet'] = adet
             sepet_listesi.append(u_copy)
-            
-    formatli_genel_toplam = f"{genel_toplam:,.2f} TL"
-    return render_template('sepet.html', sepet=sepet_listesi, genel_toplam=formatli_genel_toplam, bayi_adi=session['bayi_adi'])
+    return render_template('sepet.html', sepet=sepet_listesi, bayi_adi=session['bayi_adi'])
 
 @app.route('/sepet_sil/<urun_no>')
 def sepet_sil(urun_no):
+    if not session.get('giris_yapildi'): return redirect(url_for('login'))
     sepet = session.get('sepet', {})
-    if str(urun_no) in sepet:
-        del sepet[str(urun_no)]
+    u_no = str(urun_no)
+    if u_no in sepet:
+        del sepet[u_no]
         session['sepet'] = sepet
         session.modified = True
     return redirect(url_for('sepetim'))
