@@ -8,12 +8,14 @@ app.secret_key = "oTO959595-"
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
     try:
+        # engine='openpyxl' Render'da çalışması için ŞARTTIR
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
-    except: return []
+    except Exception as e:
+        print(f"Hata: {e}")
+        return []
 
 def fiyat_temizle(fiyat_str):
-    """'150.00 TL' gibi metinleri sayıya çevirir."""
     try:
         return float(str(fiyat_str).replace('TL', '').replace('.', '').replace(',', '.').strip())
     except:
@@ -51,7 +53,7 @@ def ana_sayfa():
             urunler = [u for u in urunler if str(u['marka']) == secili_marka]
     
     sepet = session.get('sepet', {})
-    sepet_sayisi = len(sepet) # Kaç çeşit ürün olduğunu gösterir
+    sepet_sayisi = len(sepet)
     return render_template('index.html', urunler=urunler, reklamlar=reklamlar, markalar=markalar, 
                            sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], 
                            secili_marka=secili_marka, arama_yapildi=arama_yapildi)
@@ -82,10 +84,10 @@ def sepetim():
             
             u_copy = urun.copy()
             u_copy['miktar'] = adet
-            u_copy['ara_toplam'] = f"{ara_toplam:,.2f} TL".replace(',', 'X').replace('.', ',').replace('X', '.')
+            u_copy['ara_toplam'] = f"{ara_toplam:,.2f} TL"
             sepet_listesi.append(u_copy)
             
-    formatli_genel_toplam = f"{genel_toplam:,.2f} TL".replace(',', 'X').replace('.', ',').replace('X', '.')
+    formatli_genel_toplam = f"{genel_toplam:,.2f} TL"
     return render_template('sepet.html', sepet=sepet_listesi, genel_toplam=formatli_genel_toplam, bayi_adi=session['bayi_adi'])
 
 @app.route('/sepet_sil/<urun_no>')
