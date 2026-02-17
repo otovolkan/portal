@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from Flask import Flask, render_template, request, session, redirect, url_for, jsonify
 import pandas as pd
 import os
 import re
@@ -18,11 +18,6 @@ def verileri_yukle(sayfa_adi):
         return df.fillna('').to_dict(orient='records')
     except: return []
 
-def kdv_hesapla(fiyat_str):
-    sayi_temiz = re.sub(r'[^\d]', '', str(fiyat_str))
-    if not sayi_temiz: return 0
-    return int(int(sayi_temiz) * 1.20)
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -30,7 +25,7 @@ def login():
         bayiler = verileri_yukle('bayiler')
         bayi = next((b for b in bayiler if str(b['bayi_kodu']).strip().lower() == girilen_kod), None)
         if bayi:
-            session.clear() # Girişte sepeti sıfırlayarak 1900 hatasını temizler
+            session.clear() 
             session.update({'giris_yapildi': True, 'bayi_adi': bayi['bayi_adi'], 'sepet': {}})
             return redirect(url_for('ana_sayfa'))
     return render_template('login.html')
@@ -41,25 +36,25 @@ def ana_sayfa():
     arama = request.args.get('search', '').lower()
     secili_marka = request.args.get('marka', '')
     items = verileri_yukle('urunler')
-    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and str(u.get('urun_no','')).strip().upper() != 'REKLAM'])))
     
-    reklamlar = [u for u in items if str(u.get('urun_no','')).strip().upper() == 'REKLAM']
+    reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
+    markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')])))
+    
     urunler = []
     arama_yapildi = (arama != '' or secili_marka != '')
 
     if arama_yapildi:
-        urunler = [u for u in items if str(u.get('urun_no','')).strip().upper() != 'REKLAM']
+        urunler = [u for u in items if not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
         if arama:
             urunler = [u for u in urunler if arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()]
         if secili_marka:
             urunler = [u for u in urunler if str(u['marka']) == secili_marka]
     
-    # SEPET ADEDİ: Sadece sepete eklenen ürünlerin toplam miktarını hesaplar
     sepet = session.get('sepet', {})
-    sepet_adet = sum(sepet.values()) if sepet else 0
+    sepet_sayisi = sum(sepet.values()) if sepet else 0
     
     return render_template('index.html', urunler=urunler, reklamlar=reklamlar, markalar=markalar, 
-                           sepet_sayisi=sepet_adet, bayi_adi=session['bayi_adi'], 
+                           sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], 
                            secili_marka=secili_marka, arama_yapildi=arama_yapildi)
 
 @app.route('/sepete_ekle/<urun_no>')
@@ -84,6 +79,16 @@ def sepetim():
             u_copy['adet'] = adet
             sepet_listesi.append(u_copy)
     return render_template('sepet.html', sepet=sepet_listesi, bayi_adi=session['bayi_adi'])
+
+@app.route('/sepet_sil/<urun_no>')
+def sepet_sil(urun_no):
+    if not session.get('giris_yapildi'): return redirect(url_for('login'))
+    sepet = session.get('sepet', {})
+    if str(urun_no) in sepet:
+        del sepet[str(urun_no)]
+        session['sepet'] = sepet
+        session.modified = True
+    return redirect(url_for('sepetim'))
 
 @app.route('/cikis')
 def cikis():
