@@ -11,12 +11,9 @@ app.secret_key = "oTO959595-"
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
     try:
-        # engine='openpyxl' Render üzerinde Excel okumayı garantiler
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
-    except Exception as e:
-        print(f"Hata: {e}")
-        return []
+    except: return []
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
