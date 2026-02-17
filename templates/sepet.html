@@ -59,7 +59,7 @@
         <div class="mt-5 toplam-kutu text-end">
             <div class="row align-items-center">
                 <div class="col-md-8 text-start text-muted">
-                    <small>* Siparişiniz onaylandıktan sonra yöneticimize iletilecektir.<br>* Fiyatlara %20 KDV dahildir.</small>
+                    <small>* Siparişiniz onaylandıktan sonra yöneticimize iletilecektir.<br>* Banner ürünleri Euro üzerinden, diğer ürünler TL üzerinden hesaplanır.</small>
                 </div>
                 <div class="col-md-4">
                     <div class="mb-2">
@@ -68,16 +68,14 @@
                     <div class="mb-4">
                         <span class="para-birimi">EURO TOPLAMI:</span> <span class="para-deger">{{ toplam_euro }}</span>
                     </div>
-                    <button class="btn btn-success btn-xl fw-bold shadow-lg px-5 py-3 rounded-pill fs-4 w-100" onclick="alert('Siparişiniz başarıyla alındı!')">SİPARİŞİ TAMAMLA</button>
+                    <button class="btn btn-success btn-xl fw-bold shadow-lg px-5 py-3 rounded-pill fs-4 w-100" onclick="alert('Sipariş Alındı!')">SİPARİŞİ TAMAMLA</button>
                 </div>
             </div>
         </div>
-        
         {% else %}
         <div class="text-center py-5">
             <div class="display-1 text-muted mb-4">🛒</div>
-            <h3 class="text-muted mb-4">Sepetinizde şu an ürün bulunmuyor.</h3>
-            <p class="text-secondary mb-5">Hemen ürün sorgulayarak siparişinizi oluşturmaya başlayabilirsiniz.</p>
+            <h3 class="text-muted mb-4">Sepetinizde ürün bulunmuyor.</h3>
             <a href="/" class="btn btn-primary btn-lg fw-bold shadow-lg px-5 rounded-pill py-3 text-uppercase">Hemen Ürün Sorgulamaya Git</a>
         </div>
         {% endif %}
