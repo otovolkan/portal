@@ -11,7 +11,6 @@ app.secret_key = "oTO959595-"
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
     try:
-        # Render'da en sağlam okuma yöntemi
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
     except: return []
@@ -40,7 +39,6 @@ def ana_sayfa():
     
     urunler = []
     arama_yapildi = (arama != '' or secili_marka != '')
-
     if arama_yapildi:
         urunler = [u for u in items if not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
         if arama:
@@ -82,8 +80,9 @@ def sepetim():
 def sepet_sil(urun_no):
     if not session.get('giris_yapildi'): return redirect(url_for('login'))
     sepet = session.get('sepet', {})
-    if str(urun_no) in sepet:
-        del sepet[str(urun_no)]
+    u_no = str(urun_no)
+    if u_no in sepet:
+        del sepet[u_no]
         session['sepet'] = sepet
         session.modified = True
     return redirect(url_for('sepetim'))
