@@ -15,6 +15,18 @@ def verileri_yukle(sayfa_adi):
         return df.fillna('').to_dict(orient='records')
     except: return []
 
+# --- KRİTİK: SEPETTEN SİLME ROTASI ---
+@app.route('/sepet_sil/<urun_no>')
+def sepet_sil(urun_no):
+    if not session.get('giris_yapildi'): return redirect(url_for('login'))
+    sepet = session.get('sepet', {})
+    u_no = str(urun_no)
+    if u_no in sepet:
+        del sepet[u_no]
+        session['sepet'] = sepet
+        session.modified = True
+    return redirect(url_for('sepetim'))
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -75,17 +87,6 @@ def sepetim():
             u_copy['adet'] = adet
             sepet_listesi.append(u_copy)
     return render_template('sepet.html', sepet=sepet_listesi, bayi_adi=session['bayi_adi'])
-
-@app.route('/sepet_sil/<urun_no>')
-def sepet_sil(urun_no):
-    if not session.get('giris_yapildi'): return redirect(url_for('login'))
-    sepet = session.get('sepet', {})
-    u_no = str(urun_no)
-    if u_no in sepet:
-        del sepet[u_no]
-        session['sepet'] = sepet
-        session.modified = True
-    return redirect(url_for('sepetim'))
 
 @app.route('/cikis')
 def cikis():
