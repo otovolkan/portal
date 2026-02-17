@@ -1,4 +1,4 @@
-from Flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 import pandas as pd
 import os
 import re
@@ -8,12 +8,10 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = "oTO959595-"
 
-GMAIL_ADRESIM = "voxoraku@gmail.com" 
-GMAIL_SIFREM = "gpml fttc uzzu zvaa" 
-
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
     try:
+        # Render'da en sağlam okuma yöntemi
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
     except: return []
