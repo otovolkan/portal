@@ -32,54 +32,89 @@
             <span class="bayi-vurgu">Hoş Geldiniz: <b>{{ bayi_adi }}</b></span>
         </div>
         <div class="d-flex align-items-center">
-            <a href="/sepetim" class="btn btn-warning btn-sm me-2 shadow-sm fw-bold px-3">🛒 SEPET ({{ sepet_sayisi }})</a>
-            <a href="/cikis" class="btn btn-danger btn-sm">Çıkış</a>
+            <a href="/sepetim" class="btn btn-warning btn-sm me-2 shadow-sm fw-bold px-3">🛒 SEPETİM ({{ sepet_sayisi }})</a>
+            <a href="/cikis" class="btn btn-danger btn-sm fw-bold shadow-sm">ÇIKIŞ</a>
         </div>
     </div>
 </nav>
 
 <div class="container mt-4">
-    <form action="/" method="GET" class="row g-2 mb-4 bg-white p-3 rounded shadow-sm border border-primary">
-        <div class="col-md-6"><input class="form-control form-control-lg" name="search" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus></div>
-        <div class="col-md-4">
-            <select name="marka" class="form-select form-select-lg">
-                <option value="">Tüm Markalar</option>
-                {% for m in markalar %}<option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2"><button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">SORGULA</button></div>
-    </form>
-
-    {% if not arama_yapildi %}
-        <div class="row row-cols-1 row-cols-md-3 g-3">
+    <div class="row">
+        {% if not arama_yapildi %}
             {% for r in reklamlar %}
-                <div class="col"><div class="reklam-kutu">
+            <div class="col-md-4">
+                <div class="reklam-kutu">
                     <img src="{{ url_for('static', filename='images/' + r.resim|string) }}" onerror="this.src='https://via.placeholder.com/400x400?text=Resim+Bulunamadı'">
-                </div></div>
+                </div>
+            </div>
             {% endfor %}
-        </div>
-    {% else %}
-        <div class="bg-white rounded shadow-sm overflow-hidden border">
+        {% endif %}
+    </div>
+
+    <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary-subtle">
+        <form action="/" method="GET" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label fw-bold text-primary small">Ürün Arama (Adı veya Parça No)</label>
+                <input type="text" name="search" class="form-control form-control-lg shadow-sm" placeholder="Örn: Voxor 72Ah" value="{{ request.args.get('search', '') }}" autofocus>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-primary small">Marka Seçimi</label>
+                <select name="marka" class="form-select form-select-lg shadow-sm">
+                    <option value="">Tüm Markalar</option>
+                    {% for m in markalar %}
+                    <option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow-sm">ÜRÜNÜ SORGULA</button>
+            </div>
+        </form>
+    </div>
+
+    {% if arama_yapildi %}
+        <div class="bg-white rounded shadow-sm overflow-hidden border border-secondary-subtle">
             <table class="table table-hover align-middle mb-0 text-center">
                 <thead class="table-dark">
-                    <tr><th>Parça No</th><th>Marka</th><th class="text-start">Ürün Adı</th><th>Fiyat</th><th>Stok</th><th>İşlem</th></tr>
+                    <tr>
+                        <th style="width: 80px;">Görsel</th>
+                        <th>Ürün No</th>
+                        <th class="text-start">Ürün Adı</th>
+                        <th>Marka</th>
+                        <th>Fiyat (KDV Dahil)</th>
+                        <th>Stok</th>
+                        <th style="width: 150px;">İşlem</th>
+                    </tr>
                 </thead>
                 <tbody>
                     {% for p in urunler %}
                     <tr>
-                        <td class="fw-bold text-primary">{{ p.urun_no }}</td>
-                        <td class="text-uppercase small fw-bold text-muted">{{ p.marka }}</td>
-                        <td class="text-start small">{{ p.urun_adi }}</td>
-                        <td class="text-nowrap text-success fw-bold">
-                            {% if p.indirimli_fiyat and p.indirimli_fiyat != '' %}
-                                <del class="text-muted small d-block">{{ p.fiyat }}</del>
-                                <span class="text-danger">{{ p.indirimli_fiyat }}</span>
-                            {% else %}{{ p.fiyat }}{% endif %}
+                        <td>
+                            <img src="{{ url_for('static', filename='images/' + p.resim|string) }}" 
+                                 width="60" height="60" class="rounded border cursor-pointer object-fit-contain bg-light"
+                                 onclick="openModal(this.src, '{{ p.urun_adi }}')">
                         </td>
-                        <td>{% if p.stok|int > 0 %}<span class="text-success fw-bold small">✔ VAR</span>{% else %}<span class="text-danger fw-bold small">✖ YOK</span>{% endif %}</td>
+                        <td class="fw-bold text-primary small">{{ p.urun_no }}</td>
+                        <td class="text-start fw-bold text-dark small">{{ p.urun_adi }}</td>
+                        <td><span class="badge bg-secondary px-3 py-2 text-uppercase">{{ p.marka }}</span></td>
+                        <td class="fw-bold text-primary fs-5">
+                            {% if p.indirimli_fiyat and p.indirimli_fiyat != '' %}
+                                <del class="text-muted small d-block" style="font-size: 0.75rem;">{{ p.fiyat }}</del>
+                                <span class="text-danger">{{ p.indirimli_fiyat }}</span>
+                            {% else %}
+                                {{ p.fiyat }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if p.stok|int > 0 %}
+                                <span class="text-success fw-bold small">✔ VAR</span>
+                            {% else %}
+                                <span class="text-danger fw-bold small">✖ YOK</span>
+                            {% endif %}
+                        </td>
                         <td>
                             <div class="btn-group shadow-sm">
-                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary btn-sm fw-bold">+ EKLE</a>
+                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary btn-sm fw-bold px-3">+ EKLE</a>
                                 <button class="btn btn-outline-secondary btn-sm fw-bold" onclick="openModal('{{ url_for('static', filename='images/' + p.resim|string) }}', '{{ p.urun_adi }}')">RESİM</button>
                             </div>
                         </td>
