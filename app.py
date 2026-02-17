@@ -11,48 +11,29 @@ app.secret_key = "oTO959595-"
 def verileri_yukle(sayfa_adi):
     if not os.path.exists('urunler.xlsx'): return []
     try:
-        # engine='openpyxl' Render'da Excel okumak için ŞARTTIR
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
-    except Exception as e:
-        print(f"Excel Okuma Hatası ({sayfa_adi}): {e}")
-        return []
+    except: return []
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Kullanıcının girdiği kodu temizliyoruz
-        girilen_kod = str(request.form.get('bayi_kodu', '')).strip().lower()
+        girilen_kod = request.form['bayi_kodu'].strip().lower()
         bayiler = verileri_yukle('bayiler')
-        
-        # KRİTİK: Bayi listesini tararken sütun isimlerindeki olası hataları (boşluk vb) eliyoruz
-        bayi = None
-        for b in bayiler:
-            # Excel'deki bayi_kodu sütununu bulmaya çalışıyoruz
-            b_kod = str(b.get('bayi_kodu', '')).strip().lower()
-            if b_kod == girilen_kod:
-                bayi = b
-                break
-        
+        bayi = next((b for b in bayiler if str(b['bayi_kodu']).strip().lower() == girilen_kod), None)
         if bayi:
-            session.clear() # 1900 hatasını ve eski oturumları temizler
-            session.update({
-                'giris_yapildi': True, 
-                'bayi_adi': bayi.get('bayi_adi', 'Değerli Bayimiz'), 
-                'sepet': {}
-            })
+            session.clear() 
+            session.update({'giris_yapildi': True, 'bayi_adi': bayi['bayi_adi'], 'sepet': {}})
             return redirect(url_for('ana_sayfa'))
     return render_template('login.html')
 
 @app.route('/')
 def ana_sayfa():
     if not session.get('giris_yapildi'): return redirect(url_for('login'))
-    
     arama = request.args.get('search', '').lower()
     secili_marka = request.args.get('marka', '')
     items = verileri_yukle('urunler')
     
-    # Reklamlar ve Markalar (Tasarımını bozmamak için REKLAM mantığını koruyoruz)
     reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
     markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')])))
     
