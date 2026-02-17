@@ -1,48 +1,39 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8"><title>Sepetim</title>
+    <meta charset="UTF-8"><title>Sepetim - Oto Volkan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="bg-light p-5">
-<div class="container bg-white p-4 rounded shadow border-0 text-center">
-    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-        <h2 class="fw-bold">🛒 Sipariş Özeti</h2>
-        <a href="/" class="btn btn-outline-secondary fw-bold">⬅ Kataloğa Dön</a>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-primary shadow-sm py-3"><div class="container"><a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a></div></nav>
+<div class="container mt-5">
+    <div class="bg-white p-5 rounded-4 shadow border border-primary border-opacity-25">
+        <h2 class="fw-bold text-primary mb-4 text-uppercase">🛒 Sipariş Listeniz</h2>
+        <hr>
+        {% if sepet %}
+        <div class="table-responsive">
+            <table class="table align-middle text-center table-hover">
+                <thead class="table-dark">
+                    <tr><th>GÖRSEL</th><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>ADET</th><th>FİYAT</th><th>İŞLEM</th></tr>
+                </thead>
+                <tbody>
+                    {% for p in sepet %}
+                    <tr style="height: 90px;">
+                        <td><img src="{{ url_for('static', filename='images/' + p.resim|string) }}" width="60" height="60" class="border rounded"></td>
+                        <td class="fw-bold text-secondary">{{ p.urun_no }}</td>
+                        <td class="text-start fw-bold">{{ p.urun_adi }}</td>
+                        <td><span class="badge bg-primary fs-5">{{ p.adet }} Adet</span></td>
+                        <td class="fw-bold text-primary fs-5">{{ p.fiyat }}</td>
+                        <td>
+                            <a href="{{ url_for('sepet_sil', urun_no=p.urun_no) }}" class="btn btn-danger btn-md fw-bold shadow-sm px-4 rounded-pill">🗑️ KALDIR</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}<div class="text-center py-5"><h3>Sepetiniz Boş</h3><a href="/" class="btn btn-primary mt-3 px-5 fw-bold">Kataloğa Git</a></div>{% endif %}
     </div>
-    <table class="table align-middle">
-        <thead class="table-light"><tr><th>Ürün</th><th>Miktar</th><th>Birim (KDVli)</th><th>Ara Toplam</th><th>İşlem</th></tr></thead>
-        <tbody>
-            {% for i in sepet %}
-            <tr>
-                <td class="text-start"><b>{{ i.urun_adi }}</b></td>
-                <td>{{ i.miktar }} adet</td>
-                <td>{{ i.fiyat_kdvli }} TL</td>
-                <td><b>{{ i.ara_toplam }} TL</b></td>
-                <td><a href="/sepetten_sil/{{ i.urun_no }}" class="btn btn-sm btn-danger px-3">Kaldır</a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% if sepet %}
-    <div class="text-end mt-4">
-        <h4 class="mb-0 text-muted">Genel Toplam</h4>
-        <h2 class="text-success fw-bold">{{ toplam }} TL</h2>
-        <p class="small text-muted mb-4">(Fiyatlara %20 KDV dahildir)</p>
-        <button onclick="siparisVer()" class="btn btn-success btn-lg px-5 shadow fw-bold">SİPARİŞİ WHATSAPP İLE GÖNDER</button>
-    </div>
-    {% endif %}
 </div>
-<script>
-function siparisVer() {
-    let m = "*📦 YENİ B2B SİPARİŞ FİŞİ*\n*Bayi:* {{ session.get('bayi_adi') }}\n";
-    m += "*Tarih:* " + new Date().toLocaleDateString('tr-TR') + "\n----------------------------------\n";
-    {% for i in sepet %} m += "- {{ i.miktar }} Adet {{ i.urun_adi }}\n"; {% endfor %}
-    m += "----------------------------------\n*✅ KDV DAHİL TOPLAM: {{ toplam }} TL*";
-    window.open(`https://wa.me/905XXXXXXXXX?text=${encodeURIComponent(m)}`);
-    document.getElementById('f').submit();
-}
-</script>
-<form id="f" action="/siparis_onay" method="POST" style="display:none;"></form>
 </body>
 </html>
