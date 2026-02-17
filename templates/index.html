@@ -38,7 +38,7 @@
                     {{ sepet_sayisi }}
                 </span>
             </a>
-            <a href="/cikis" class="btn btn-outline-light fw-bold shadow-sm">ÇIKIŞ YAP</a>
+            <a href="/cikis" class="btn btn-outline-light fw-bold shadow-sm">ÇIKIŞ</a>
         </div>
     </div>
 </nav>
@@ -48,9 +48,7 @@
         {% if not arama_yapildi %}
             {% for r in reklamlar %}
             <div class="col-md-4">
-                <div class="reklam-kutu shadow">
-                    <img src="{{ url_for('static', filename='images/' + r.resim|string) }}" onerror="this.src='https://via.placeholder.com/400x400?text=Resim+Yok'">
-                </div>
+                <div class="reklam-kutu shadow"><img src="{{ url_for('static', filename='images/' + r.resim|string) }}" onerror="this.src='https://via.placeholder.com/400x400?text=Resim+Yok'"></div>
             </div>
             {% endfor %}
         {% endif %}
@@ -63,13 +61,13 @@
                 <input type="text" name="search" class="form-control form-control-lg border-2" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus>
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-bold text-primary small text-uppercase">Marka Filtresi</label>
+                <label class="form-label fw-bold text-primary small text-uppercase">Marka</label>
                 <select name="marka" class="form-select form-select-lg border-2">
                     <option value="">Tüm Markalar</option>
                     {% for m in markalar %}<option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="col-md-3"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow text-uppercase">SORGULA</button></div>
+            <div class="col-md-3"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow">SORGULA</button></div>
         </form>
     </div>
 
@@ -84,8 +82,8 @@
                     <tr style="height: 80px;">
                         <td><img src="{{ url_for('static', filename='images/' + p.resim|string) }}" width="60" height="60" class="rounded border cursor-pointer" onclick="openModal(this.src, '{{ p.urun_adi }}')"></td>
                         <td class="fw-bold text-primary fs-6">{{ p.urun_no }}</td>
-                        <td class="text-start fw-bold text-dark" style="font-size: 0.9rem;">{{ p.urun_adi }}</td>
-                        <td><span class="badge bg-secondary px-3 py-2 text-uppercase">{{ p.marka }}</span></td>
+                        <td class="text-start fw-bold text-dark small">{{ p.urun_adi }}</td>
+                        <td><span class="badge bg-secondary px-3 py-2">{{ p.marka }}</span></td>
                         <td class="fw-bold text-primary fs-5">
                             {% if p.indirimli_fiyat and p.indirimli_fiyat != '' %}
                                 <del class="text-muted small d-block" style="font-size: 0.75rem;">{{ p.fiyat }}</del>
