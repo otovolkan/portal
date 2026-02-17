@@ -14,14 +14,14 @@
         <div class="table-responsive">
             <table class="table align-middle text-center table-hover">
                 <thead class="table-dark">
-                    <tr><th>GÖRSEL</th><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>ADET</th><th>FİYAT</th><th>İŞLEM</th></tr>
+                    <tr><th>GÖRSEL</th><th>ÜRÜN NO</th><th>ÜRÜN ADI</th><th>ADET</th><th>FİYAT</th><th>İŞLEM</th></tr>
                 </thead>
                 <tbody>
                     {% for p in sepet %}
                     <tr style="height: 90px;">
                         <td><img src="{{ url_for('static', filename='images/' + p.resim|string) }}" width="60" height="60" class="border rounded"></td>
                         <td class="fw-bold text-secondary">{{ p.urun_no }}</td>
-                        <td class="text-start fw-bold">{{ p.urun_adi }}</td>
+                        <td class="fw-bold text-dark">{{ p.urun_adi }}</td>
                         <td><span class="badge bg-primary fs-5">{{ p.adet }} Adet</span></td>
                         <td class="fw-bold text-primary fs-5">{{ p.fiyat }}</td>
                         <td>
@@ -32,7 +32,7 @@
                 </tbody>
             </table>
         </div>
-        {% else %}<div class="text-center py-5"><h3>Sepetiniz Boş</h3><a href="/" class="btn btn-primary mt-3 px-5 fw-bold">Kataloğa Git</a></div>{% endif %}
+        {% else %}<div class="text-center py-5"><h3>Sepetiniz Boş</h3><a href="/" class="btn btn-primary mt-3 px-5 fw-bold shadow">Kataloğa Git</a></div>{% endif %}
     </div>
 </div>
 </body>
