@@ -6,20 +6,34 @@ import re
 app = Flask(__name__)
 app.secret_key = "oTO959595-"
 
-def format_fiyat(deger):
-    """Excel'deki karışık rakamları ve EURO/TL ayrımını jilet gibi yapar."""
+def format_fiyat(deger, para_birimi_kolonu="", marka=""):
+    """
+    Excel'den gelen fiyatı formatlar. 
+    Öncelik 'para_birimi' sütunundadır.
+    """
     if not deger: return "0,00 TL"
-    s = str(deger).upper().strip()
     
-    # Para birimini belirle: Eğer içinde EURO veya € geçiyorsa EURO, yoksa TL
-    birim = "EURO" if ("EURO" in s or "€" in s) else "TL"
+    fiyat_str = str(deger).upper().strip()
+    pb_kolon = str(para_birimi_kolonu).upper().strip()
+    marka_ust = str(marka).upper().strip()
     
-    # Rakam dışındaki her şeyi temizle (sadece rakam, nokta ve virgül kalsın)
-    sayi_metin = re.sub(r'[^\d,.]', '', s)
+    # PARA BİRİMİ TESPİTİ (Öncelik sırasına göre):
+    # 1. Excel'deki yeni sütun dolu mu? (TL/EURO)
+    # 2. Fiyat metninde simge var mı?
+    # 3. Marka Banner mı? (Geriye dönük uyumluluk için)
+    if pb_kolon in ["TL", "EURO", "TRY", "EUR", "€", "₺"]:
+        birim = "EURO" if pb_kolon in ["EURO", "EUR", "€"] else "TL"
+    elif "EURO" in fiyat_str or "€" in fiyat_str or "BANNER" in marka_ust:
+        birim = "EURO"
+    else:
+        birim = "TL"
+    
+    # Sayıyı ayıkla (Nokta ve virgül dışındaki harf/simge her şeyi temizle)
+    sayi_metin = re.sub(r'[^\d,.]', '', fiyat_str)
     if not sayi_metin: return f"0,00 {birim}"
     
     try:
-        # 1.250,50 formatını 1250.50'ye çevirip float yapıyoruz
+        # Karmaşık formatları (1.250,50 veya 26.2559) standart sayıya çevir
         if ',' in sayi_metin and '.' in sayi_metin:
             sayi = float(sayi_metin.replace('.', '').replace(',', '.'))
         elif ',' in sayi_metin:
@@ -27,7 +41,7 @@ def format_fiyat(deger):
         else:
             sayi = float(sayi_metin)
         
-        # Jilet gibi 1.250,50 formatında geri döndür
+        # Jilet gibi 1.250,50 formatına sok
         return f"{sayi:,.2f} {birim}".replace(',', 'X').replace('.', ',').replace('X', '.')
     except:
         return f"{deger} {birim}"
@@ -69,10 +83,11 @@ def ana_sayfa():
     items = verileri_yukle('urunler')
     
     for item in items:
-        # Katalogda görünecek formatlı fiyat
-        item['fiyat_gosterim'] = format_fiyat(item.get('fiyat'))
+        # Excel'deki yeni sütunu (para_birimi) kullanarak formatla
+        pb = item.get('para_birimi', '')
+        item['fiyat_gosterim'] = format_fiyat(item.get('fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
         if item.get('indirimli_fiyat'):
-            item['indirimli_gosterim'] = format_fiyat(item.get('indirimli_fiyat'))
+            item['indirimli_gosterim'] = format_fiyat(item.get('indirimli_fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
 
     reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
     markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')])))
@@ -115,8 +130,14 @@ def sepetim():
             birim_fiyat_sayi = fiyat_sayiya_cevir(urun.get('fiyat'))
             ara_toplam = birim_fiyat_sayi * adet
             
+            pb_kolon = str(urun.get('para_birimi', '')).upper().strip()
             f_str = str(urun.get('fiyat')).upper()
-            if "EURO" in f_str or "€" in f_str:
+            m_str = str(urun.get('marka')).upper()
+            
+            # Sepet hesaplamasında da aynı dinamik mantık:
+            is_euro = (pb_kolon in ["EURO", "EUR", "€"] or "EURO" in f_str or "€" in f_str or "BANNER" in m_str)
+            
+            if is_euro:
                 t_euro += ara_toplam
                 at_gosterim = f"{ara_toplam:,.2f} EURO".replace(',', 'X').replace('.', ',').replace('X', '.')
             else:
@@ -125,7 +146,7 @@ def sepetim():
             
             u_copy = urun.copy()
             u_copy['adet'] = adet
-            u_copy['birim_gosterim'] = format_fiyat(urun.get('fiyat'))
+            u_copy['birim_gosterim'] = format_fiyat(urun.get('fiyat'), para_birimi_kolonu=pb_kolon, marka=m_str)
             u_copy['ara_toplam_gosterim'] = at_gosterim
             sepet_listesi.append(u_copy)
             
