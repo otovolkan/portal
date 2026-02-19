@@ -74,7 +74,6 @@ def ana_sayfa():
         item['fiyat_gosterim'] = format_fiyat(item.get('fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
         if item.get('indirimli_fiyat'):
             item['indirimli_gosterim'] = format_fiyat(item.get('indirimli_fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
-        # RESİM DOSYASI: Hem büyük hem küçük harf denemesi için HTML tarafına ham ismi yolluyoruz
         item['resim_temiz'] = str(item.get('resim', '')).strip()
 
     reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
