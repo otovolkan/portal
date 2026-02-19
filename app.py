@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for
 import pandas as pd
 import os
 import re
@@ -7,12 +7,12 @@ app = Flask(__name__)
 app.secret_key = "oTO959595-"
 
 def format_fiyat(deger, para_birimi_kolonu="", marka=""):
-    """Excel'den gelen fiyatı formatlar. Dinamik kur seçimi yapar."""
     if not deger: return "0,00 TL"
     fiyat_str = str(deger).upper().strip()
     pb_kolon = str(para_birimi_kolonu).upper().strip()
     marka_ust = str(marka).upper().strip()
     
+    # Dinamik Para Birimi Belirleme
     if pb_kolon in ["TL", "EURO", "TRY", "EUR", "€", "₺"]:
         birim = "EURO" if pb_kolon in ["EURO", "EUR", "€"] else "TL"
     elif "EURO" in fiyat_str or "€" in fiyat_str or "BANNER" in marka_ust:
@@ -48,7 +48,9 @@ def verileri_yukle(sayfa_adi):
     try:
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
-    except: return []
+    except Exception as e:
+        print(f"Hata: {e}")
+        return []
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
