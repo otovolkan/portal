@@ -15,6 +15,7 @@
     </style>
 </head>
 <body class="bg-light">
+
 <div id="imageModal" class="modal-custom" onclick="this.style.display='none'">
     <div class="modal-content-custom" onclick="event.stopPropagation()">
         <span class="close-btn" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
@@ -22,6 +23,7 @@
         <hr><img id="modalImg" src="" style="max-width:100%; max-height: 70vh; border-radius:10px; object-fit: contain;">
     </div>
 </div>
+
 <nav class="navbar navbar-dark bg-primary shadow sticky-top py-3">
     <div class="container border-0 text-white d-flex justify-content-between align-items-center">
         <div class="brand-title">
@@ -34,12 +36,21 @@
         </div>
     </div>
 </nav>
+
 <div class="container mt-4">
     <div class="row">
         {% if not arama_yapildi %}
-            {% for r in reklamlar %}<div class="col-md-4"><div class="reklam-kutu shadow"><img src="{{ url_for('static', filename='images/' + r.resim_temiz) }}" onerror="this.onerror=null; this.src='/static/images/' + '{{ r.resim_temiz }}'.toLowerCase();"></div></div>{% endfor %}
+            {% for r in reklamlar %}
+            <div class="col-md-4">
+                <div class="reklam-kutu shadow">
+                    <img src="{{ url_for('static', filename='images/' + r.resim_temiz) }}" 
+                         onerror="this.onerror=null; this.src='/static/images/' + '{{ r.resim_temiz }}'.toLowerCase();">
+                </div>
+            </div>
+            {% endfor %}
         {% endif %}
     </div>
+
     <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary border-2">
         <form action="/" method="GET" class="row g-3 align-items-end">
             <div class="col-md-5"><label class="form-label fw-bold text-primary small">Ürün Arama</label><input type="text" name="search" class="form-control form-control-lg" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus></div>
@@ -47,6 +58,7 @@
             <div class="col-md-3"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow">SORGULA</button></div>
         </form>
     </div>
+
     {% if arama_yapildi %}
         <div class="bg-white rounded-4 shadow-sm overflow-hidden border">
             <table class="table table-hover align-middle mb-0 text-center">
@@ -72,6 +84,7 @@
         </div>
     {% endif %}
 </div>
+
 <script>
 function openModal(imgSrc, title) {
     document.getElementById('modalImg').src = imgSrc;
@@ -82,7 +95,14 @@ function tryOpen(imgName, title) {
     let img = new Image();
     let src = '/static/images/' + imgName;
     img.onload = function() { openModal(src, title); };
-    img.onerror = function() { openModal(src.toLowerCase(), title); };
+    img.onerror = function() { 
+        // Eğer büyük harfle bulamazsa küçük harfi dene
+        let lowerSrc = '/static/images/' + imgName.toLowerCase();
+        let img2 = new Image();
+        img2.onload = function() { openModal(lowerSrc, title); };
+        img2.onerror = function() { alert('Görsel dosyası bulunamadı! (Lütfen GitHub klasörünü kontrol edin)'); };
+        img2.src = lowerSrc;
+    };
     img.src = src;
 }
 </script>
