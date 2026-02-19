@@ -12,8 +12,6 @@
         .modal-custom { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); }
         .modal-content-custom { position: relative; background: #fff; margin: 3% auto; padding: 20px; width: 50%; border-radius: 15px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
         .close-btn { position: absolute; right: 20px; top: 15px; font-size: 35px; cursor: pointer; color: #333; font-weight: bold; }
-        .table img { transition: transform 0.2s; cursor: pointer; }
-        .table img:hover { transform: scale(1.1); }
     </style>
 </head>
 <body class="bg-light">
@@ -22,25 +20,18 @@
     <div class="modal-content-custom" onclick="event.stopPropagation()">
         <span class="close-btn" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
         <h5 id="modalTitle" class="mb-3 fw-bold text-primary fs-4"></h5>
-        <hr>
-        <img id="modalImg" src="" style="max-width:100%; max-height: 70vh; border-radius:10px; object-fit: contain;">
+        <hr><img id="modalImg" src="" style="max-width:100%; max-height: 70vh; border-radius:10px; object-fit: contain;">
     </div>
 </div>
 
 <nav class="navbar navbar-dark bg-primary shadow sticky-top py-3">
-    <div class="container border-0 text-white">
+    <div class="container border-0 text-white d-flex justify-content-between">
         <div class="brand-title">
-            <a class="navbar-brand fw-bold fs-2 mb-0" href="/" style="letter-spacing: -1px;">OTO VOLKAN</a>
-            <div class="brand-sub">B2B YEDEK PARÇA SİSTEMİ</div>
+            <a class="navbar-brand fw-bold fs-2 mb-0" href="/">OTO VOLKAN</a>
             <span class="bayi-vurgu">Hoş Geldiniz: <b class="text-warning">{{ bayi_adi }}</b></span>
         </div>
         <div class="d-flex align-items-center">
-            <a href="/sepetim" class="btn btn-warning btn-lg me-3 shadow-sm fw-bold px-4 position-relative">
-                🛒 SEPETİM 
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    {{ sepet_sayisi }}
-                </span>
-            </a>
+            <a href="/sepetim" class="btn btn-warning btn-lg me-3 shadow-sm fw-bold position-relative">🛒 SEPETİM <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ sepet_sayisi }}</span></a>
             <a href="/cikis" class="btn btn-outline-light fw-bold shadow-sm">ÇIKIŞ</a>
         </div>
     </div>
@@ -49,60 +40,36 @@
 <div class="container mt-4">
     <div class="row">
         {% if not arama_yapildi %}
-            {% for r in reklamlar %}
-            <div class="col-md-4">
-                <div class="reklam-kutu shadow">
-                    <img src="{{ url_for('static', filename='images/' + r.resim_temiz) }}" 
-                         onerror="this.onerror=null; this.src='/static/images/' + '{{ r.resim_temiz }}'.toLowerCase();">
-                </div>
-            </div>
-            {% endfor %}
+            {% for r in reklamlar %}<div class="col-md-4"><div class="reklam-kutu shadow"><img src="{{ url_for('static', filename='images/' + r.resim_temiz) }}" onerror="this.onerror=null; this.src='/static/images/' + '{{ r.resim_temiz }}'.toLowerCase();"></div></div>{% endfor %}
         {% endif %}
     </div>
 
     <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary border-2">
         <form action="/" method="GET" class="row g-3 align-items-end">
-            <div class="col-md-5">
-                <label class="form-label fw-bold text-primary small text-uppercase">Ürün Arama</label>
-                <input type="text" name="search" class="form-control form-control-lg border-2" placeholder="Örn: Voxor 72Ah..." value="{{ request.args.get('search', '') }}" autofocus>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold text-primary small text-uppercase">Marka</label>
-                <select name="marka" class="form-select form-select-lg border-2">
-                    <option value="">Tüm Markalar</option>
-                    {% for m in markalar %}<option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow">SORGULA</button></div>
+            <div class="col-md-5"><label class="form-label fw-bold text-primary small">Ürün Arama</label><input type="text" name="search" class="form-control form-control-lg" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus></div>
+            <div class="col-md-4"><label class="form-label fw-bold text-primary small">Marka</label><select name="marka" class="form-select form-select-lg"><option value="">Tüm Markalar</option>{% for m in markalar %}<option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow">SORGULA</button></div>
         </form>
     </div>
 
     {% if arama_yapildi %}
         <div class="bg-white rounded-4 shadow-sm overflow-hidden border">
             <table class="table table-hover align-middle mb-0 text-center">
-                <thead class="table-dark"><tr><th>GÖRSEL</th><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>MARKA</th><th>FİYAT</th><th>STOK</th><th>İŞLEM</th></tr></thead>
+                <thead class="table-dark"><tr><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>MARKA</th><th>FİYAT</th><th>STOK</th><th>İŞLEM</th></tr></thead>
                 <tbody>
                     {% for p in urunler %}
-                    <tr style="height: 80px;">
-                        <td>
-                            <img src="{{ url_for('static', filename='images/' + p.resim_temiz) }}" width="60" height="60" class="rounded border cursor-pointer" 
-                                 onclick="openModal(this.src, '{{ p.urun_adi }}')"
-                                 onerror="this.onerror=null; this.src='/static/images/' + '{{ p.resim_temiz }}'.toLowerCase();">
-                        </td>
-                        <td class="fw-bold text-primary fs-6">{{ p.urun_no }}</td>
+                    <tr style="height: 60px;">
+                        <td class="fw-bold text-primary">{{ p.urun_no }}</td>
                         <td class="text-start fw-bold text-dark small">{{ p.urun_adi }}</td>
-                        <td><span class="badge bg-secondary px-3 py-2 text-uppercase">{{ p.marka }}</span></td>
-                        <td class="fw-bold text-primary fs-5">
-                            {% if p.indirimli_gosterim %}
-                                <del class="text-muted small d-block">{{ p.fiyat_gosterim }}</del>
-                                <span class="text-danger fw-bolder">{{ p.indirimli_gosterim }}</span>
-                            {% else %}{{ p.fiyat_gosterim }}{% endif %}
+                        <td><span class="badge bg-secondary px-3 py-2">{{ p.marka }}</span></td>
+                        <td class="fw-bold text-primary">
+                            {% if p.indirimli_gosterim %}<del class="text-muted small d-block">{{ p.fiyat_gosterim }}</del><span class="text-danger fw-bolder">{{ p.indirimli_gosterim }}</span>{% else %}{{ p.fiyat_gosterim }}{% endif %}
                         </td>
                         <td>{% if p.stok|int > 0 %}<span class="text-success fw-bold">✔ VAR</span>{% else %}<span class="text-danger fw-bold">✖ YOK</span>{% endif %}</td>
                         <td>
                             <div class="btn-group shadow-sm">
-                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary fw-bold px-3">+ EKLE</a>
-                                <button class="btn btn-outline-dark fw-bold" onclick="openModal('{{ url_for('static', filename='images/' + p.resim_temiz) }}', '{{ p.urun_adi }}')">🔍 GÖRSEL</button>
+                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary fw-bold">🛒 EKLE</a>
+                                <button class="btn btn-outline-dark fw-bold" onclick="openModal('/static/images/{{ p.resim_temiz }}', '{{ p.urun_adi }}')" onmouseover="this.onclick=function(){ tryOpen(this, '{{ p.resim_temiz }}', '{{ p.urun_adi }}') }">🔍 GÖRSEL</button>
                             </div>
                         </td>
                     </tr>
@@ -118,6 +85,14 @@ function openModal(imgSrc, title) {
     document.getElementById('modalImg').src = imgSrc;
     document.getElementById('modalTitle').innerText = title;
     document.getElementById('imageModal').style.display = 'block';
+}
+
+function tryOpen(btn, imgName, title) {
+    let img = new Image();
+    let src = '/static/images/' + imgName;
+    img.onload = function() { openModal(src, title); };
+    img.onerror = function() { openModal(src.toLowerCase(), title); };
+    img.src = src;
 }
 </script>
 </body>
