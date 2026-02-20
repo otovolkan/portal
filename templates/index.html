@@ -43,8 +43,8 @@
             {% for r in reklamlar %}
             <div class="col-md-4">
                 <div class="reklam-kutu shadow">
-                    <img src="{{ url_for('static', filename='images/' + r.resim_temiz) }}" 
-                         onerror="this.onerror=null; this.src='/static/images/' + '{{ r.resim_temiz }}'.toLowerCase();">
+                    <img src="/static/images/{{ r.resim_temiz }}" 
+                         onerror="checkImage(this, '{{ r.resim_temiz }}')">
                 </div>
             </div>
             {% endfor %}
@@ -74,7 +74,7 @@
                         <td>
                             <div class="btn-group shadow-sm">
                                 <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary fw-bold">🛒 EKLE</a>
-                                <button class="btn btn-outline-dark fw-bold" onclick="tryOpen('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">🔍 GÖRSEL</button>
+                                <button class="btn btn-outline-dark fw-bold" onclick="forceTryOpen('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">🔍 GÖRSEL</button>
                             </div>
                         </td>
                     </tr>
@@ -91,19 +91,54 @@ function openModal(imgSrc, title) {
     document.getElementById('modalTitle').innerText = title;
     document.getElementById('imageModal').style.display = 'block';
 }
-function tryOpen(imgName, title) {
-    let img = new Image();
-    let src = '/static/images/' + imgName;
-    img.onload = function() { openModal(src, title); };
-    img.onerror = function() { 
-        // Eğer büyük harfle bulamazsa küçük harfi dene
-        let lowerSrc = '/static/images/' + imgName.toLowerCase();
-        let img2 = new Image();
-        img2.onload = function() { openModal(lowerSrc, title); };
-        img2.onerror = function() { alert('Görsel dosyası bulunamadı! (Lütfen GitHub klasörünü kontrol edin)'); };
-        img2.src = lowerSrc;
-    };
-    img.src = src;
+
+// Reklam görselleri için otomatik kontrol
+function checkImage(imgTag, originalName) {
+    let variations = [
+        originalName.toLowerCase(),
+        originalName.toUpperCase(),
+        originalName.replace('.PNG', '.png'),
+        originalName.replace('.png', '.PNG')
+    ];
+    let currentIdx = 0;
+
+    function tryNext() {
+        if (currentIdx < variations.length) {
+            imgTag.src = '/static/images/' + variations[currentIdx];
+            currentIdx++;
+        } else {
+            imgTag.src = 'https://via.placeholder.com/400x400?text=Gorsel+Yok';
+            imgTag.onerror = null;
+        }
+    }
+    tryNext();
+}
+
+// Görsel butonu için zorlayıcı kontrol
+function forceTryOpen(imgName, title) {
+    let variations = [
+        imgName,
+        imgName.toLowerCase(),
+        imgName.toUpperCase(),
+        imgName.endsWith('.PNG') ? imgName.replace('.PNG', '.png') : imgName.replace('.png', '.PNG')
+    ];
+    
+    let tried = 0;
+    function attempt(idx) {
+        let testImg = new Image();
+        let testSrc = '/static/images/' + variations[idx];
+        testImg.onload = function() { openModal(testSrc, title); };
+        testImg.onerror = function() {
+            tried++;
+            if (tried < variations.length) {
+                attempt(tried);
+            } else {
+                alert("Hata: '" + imgName + "' dosyası GitHub 'static/images' klasöründe bulunamadı. Lütfen dosya adını ve uzantısını kontrol edin.");
+            }
+        };
+        testImg.src = testSrc;
+    }
+    attempt(0);
 }
 </script>
 </body>
