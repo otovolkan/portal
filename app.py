@@ -11,7 +11,6 @@ def format_fiyat(deger, para_birimi_kolonu="", marka=""):
     fiyat_str = str(deger).upper().strip()
     pb_kolon = str(para_birimi_kolonu).upper().strip()
     
-    # Dinamik Para Birimi: Excel'deki yeni sütuna öncelik ver
     if pb_kolon in ["TL", "EURO", "TRY", "EUR", "€", "₺"]:
         birim = "EURO" if pb_kolon in ["EURO", "EUR", "€"] else "TL"
     elif "EURO" in fiyat_str or "€" in fiyat_str or "BANNER" in str(marka).upper():
