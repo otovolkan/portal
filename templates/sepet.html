@@ -10,7 +10,7 @@
 <body class="bg-light">
 <nav class="navbar navbar-dark bg-primary shadow-sm py-3"><div class="container d-flex justify-content-between align-items-center"><a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a><a href="/" class="btn btn-outline-light btn-sm fw-bold shadow-sm px-4">← ALIŞVERİŞE DEVAM ET</a></div></nav>
 <div class="container mt-5">
-    <div class="bg-white p-5 rounded-4 shadow border border-primary border-opacity-10">
+    <div class="bg-white p-5 rounded-4 shadow border">
         <h2 class="fw-bold text-primary mb-4 text-uppercase">🛒 Sipariş Listeniz</h2><hr>
         {% if sepet %}
         <div class="table-responsive">
@@ -18,7 +18,7 @@
                 <thead class="table-dark"><tr><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>ADET</th><th>BİRİM FİYAT</th><th>ARA TOPLAM</th><th>İŞLEM</th></tr></thead>
                 <tbody>
                     {% for p in sepet %}
-                    <tr>
+                    <tr class="sepet-satir" data-no="{{ p.urun_no }}" data-ad="{{ p.urun_adi }}" data-adet="{{ p.adet }}" data-birim="{{ p.birim_gosterim }}" data-toplam="{{ p.ara_toplam_gosterim }}">
                         <td class="fw-bold text-secondary">{{ p.urun_no }}</td>
                         <td class="text-start fw-bold text-dark small">{{ p.urun_adi }}</td>
                         <td><span class="badge bg-primary fs-5 px-3 shadow-sm">{{ p.adet }} Adet</span></td>
@@ -30,9 +30,36 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-5 toplam-kutu text-end"><div class="mb-2 fw-bold text-dark">TL TOPLAMI: {{ toplam_tl }}</div><div class="mb-4 fw-bold text-success fs-4">EURO TOPLAMI: {{ toplam_euro }}</div><button class="btn btn-success btn-xl fw-bold shadow-lg px-5 py-3 rounded-pill fs-4" onclick="alert('Sipariş Alındı!')">SİPARİŞİ TAMAMLA</button></div>
-        {% else %}<div class="text-center py-5"><h3>Sepetiniz boş.</h3><a href="/" class="btn btn-primary mt-3 px-5 fw-bold rounded-pill shadow">Ürün Sorgulamaya Git</a></div>{% endif %}
+        <div class="mt-5 toplam-kutu text-end">
+            <div class="mb-2 fw-bold text-dark">TL TOPLAMI: <span id="topTl">{{ toplam_tl }}</span></div>
+            <div class="mb-4 fw-bold text-success fs-4">EURO TOPLAMI: <span id="topEur">{{ toplam_euro }}</span></div>
+            
+            <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-info btn-lg fw-bold text-white px-4 rounded-pill shadow" onclick="emailSiparisGonder()">📧 EMAIL GÖNDER</button>
+                <button class="btn btn-success btn-lg fw-bold px-4 rounded-pill shadow" onclick="wpSiparisGonder()">🟢 WHATSAPP GÖNDER</button>
+            </div>
+        </div>
+        {% else %}<div class="text-center py-5"><h3>Sepetiniz boş.</h3><a href="/" class="btn btn-primary mt-3 px-5 fw-bold rounded-pill">Ürün Sorgulamaya Git</a></div>{% endif %}
     </div>
 </div>
+
+<script>
+function emailSiparisGonder() {
+    fetch('/siparis_tamamla', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => { alert(data.mesaj); if(!data.hata) location.reload(); });
+}
+
+function wpSiparisGonder() {
+    let bayi = "{{ bayi_adi }}";
+    let telefon = "{{ wp_no }}";
+    let mesaj = "*OTO VOLKAN B2B SİPARİŞİ*\n Bayi: " + bayi + "\n\n";
+    document.querySelectorAll('.sepet-satir').forEach((satir) => {
+        mesaj += "📦 *" + satir.dataset.ad + "* (" + satir.dataset.no + ")\n   " + satir.dataset.adet + " Adet x " + satir.dataset.birim + " = " + satir.dataset.toplam + "\n";
+    });
+    mesaj += "\nTL: " + document.getElementById('topTl').innerText + "\nEURO: " + document.getElementById('topEur').innerText;
+    window.open("https://wa.me/" + telefon + "?text=" + encodeURIComponent(mesaj), '_blank');
+}
+</script>
 </body>
 </html>
