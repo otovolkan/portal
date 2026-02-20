@@ -89,7 +89,7 @@ function forceOpen(name, title) {
     function attempt(){
         let img=new Image(); let src='/static/images/'+vars[i];
         img.onload=()=>openModal(src, title);
-        img.onerror=()=>{i++; if(i<vars.length) attempt(); else alert("Hata: " + name + " dosyası bulunamadı!");};
+        img.onerror=()=>{i++; if(i<vars.length) attempt(); else alert("Hata: Görsel bulunamadı!");};
         img.src=src;
     }
     attempt();
