@@ -73,6 +73,7 @@ def ana_sayfa():
         item['fiyat_gosterim'] = format_fiyat(item.get('fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
         if item.get('indirimli_fiyat'):
             item['indirimli_gosterim'] = format_fiyat(item.get('indirimli_fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
+        # Resim ismini temizle ve güvenli hale getir
         item['resim_temiz'] = str(item.get('resim', '')).strip()
 
     reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
@@ -124,7 +125,6 @@ def sepetim():
                 at_g = f"{ara_toplam:,.2f} TL".replace(',', 'X').replace('.', ',').replace('X', '.')
             u_copy = urun.copy()
             u_copy['adet'] = adet
-            u_copy['resim_temiz'] = str(urun.get('resim', '')).strip()
             u_copy['birim_gosterim'] = format_fiyat(urun.get('fiyat'), para_birimi_kolonu=pb_kolon, marka=urun.get('marka'))
             u_copy['ara_toplam_gosterim'] = at_g
             sepet_listesi.append(u_copy)
