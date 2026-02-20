@@ -14,7 +14,6 @@
     </style>
 </head>
 <body class="bg-light">
-
 <div id="imageModal" class="modal-custom" onclick="this.style.display='none'">
     <div class="modal-content-custom" onclick="event.stopPropagation()">
         <span class="close-btn" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
@@ -22,7 +21,6 @@
         <hr><img id="modalImg" src="" style="max-width:100%; max-height: 70vh; border-radius:10px; object-fit: contain;">
     </div>
 </div>
-
 <nav class="navbar navbar-dark bg-primary shadow sticky-top py-3">
     <div class="container border-0 text-white d-flex justify-content-between align-items-center">
         <div class="brand-title">
@@ -35,21 +33,12 @@
         </div>
     </div>
 </nav>
-
 <div class="container mt-4">
     <div class="row">
         {% if not arama_yapildi %}
-            {% for r in reklamlar %}
-            <div class="col-md-4">
-                <div class="reklam-kutu shadow">
-                    <img src="/static/images/{{ r.resim_temiz }}" 
-                         onerror="smartTry(this, '{{ r.resim_temiz }}')">
-                </div>
-            </div>
-            {% endfor %}
+            {% for r in reklamlar %}<div class="col-md-4"><div class="reklam-kutu shadow"><img src="/static/images/{{ r.resim_temiz }}" onerror="smartTry(this, '{{ r.resim_temiz }}')"></div></div>{% endfor %}
         {% endif %}
     </div>
-
     <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary border-2">
         <form action="/" method="GET" class="row g-3 align-items-end">
             <div class="col-md-5"><label class="form-label fw-bold text-primary small">Ürün Arama</label><input type="text" name="search" class="form-control form-control-lg" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus></div>
@@ -57,7 +46,6 @@
             <div class="col-md-3"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow">SORGULA</button></div>
         </form>
     </div>
-
     {% if arama_yapildi %}
         <div class="bg-white rounded-4 shadow-sm overflow-hidden border">
             <table class="table table-hover align-middle mb-0 text-center">
@@ -73,7 +61,7 @@
                         <td>
                             <div class="btn-group shadow-sm">
                                 <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary fw-bold">🛒 EKLE</a>
-                                <button class="btn btn-outline-dark fw-bold" onclick="forceOpenImage('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">🔍 GÖRSEL</button>
+                                <button class="btn btn-outline-dark fw-bold" onclick="forceOpen('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">🔍 GÖRSEL</button>
                             </div>
                         </td>
                     </tr>
@@ -83,40 +71,26 @@
         </div>
     {% endif %}
 </div>
-
 <script>
 function openModal(imgSrc, title) {
     document.getElementById('modalImg').src = imgSrc;
     document.getElementById('modalTitle').innerText = title;
     document.getElementById('imageModal').style.display = 'block';
 }
-
 function smartTry(imgTag, name) {
     let alt = name.includes('.PNG') ? name.replace('.PNG', '.png') : name.replace('.png', '.PNG');
     imgTag.onerror = () => { imgTag.src = '/static/images/' + alt; imgTag.onerror = () => { imgTag.src = 'https://via.placeholder.com/400x400?text=Dosya+Yok'; }; };
     imgTag.src = '/static/images/' + name;
 }
-
-function forceOpenImage(name, title) {
-    let variations = [name, name.toLowerCase(), name.toUpperCase()];
-    if(name.includes('.')) {
-        let base = name.split('.')[0];
-        variations.push(base + ".png");
-        variations.push(base + ".PNG");
-        variations.push(base + ".jpg");
-    }
-
-    let i = 0;
-    function attempt() {
-        let img = new Image();
-        let src = '/static/images/' + variations[i];
-        img.onload = () => openModal(src, title);
-        img.onerror = () => {
-            i++;
-            if(i < variations.length) attempt();
-            else alert("Resim bulunamadı! Lütfen GitHub'da 'static/images/" + name + "' dosyasının varlığını kontrol edin.");
-        };
-        img.src = src;
+function forceOpen(name, title) {
+    let vars = [name, name.toLowerCase(), name.toUpperCase()];
+    if(name.includes('.')){let b=name.split('.')[0]; vars.push(b+".png"); vars.push(b+".PNG");}
+    let i=0;
+    function attempt(){
+        let img=new Image(); let src='/static/images/'+vars[i];
+        img.onload=()=>openModal(src, title);
+        img.onerror=()=>{i++; if(i<vars.length) attempt(); else alert("Hata: " + name + " dosyası bulunamadı!");};
+        img.src=src;
     }
     attempt();
 }
