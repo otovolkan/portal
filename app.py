@@ -10,11 +10,11 @@ def format_fiyat(deger, para_birimi_kolonu="", marka=""):
     if not deger: return "0,00 TL"
     fiyat_str = str(deger).upper().strip()
     pb_kolon = str(para_birimi_kolonu).upper().strip()
-    marka_ust = str(marka).upper().strip()
     
+    # Dinamik Para Birimi: Excel'deki yeni sütuna öncelik ver
     if pb_kolon in ["TL", "EURO", "TRY", "EUR", "€", "₺"]:
         birim = "EURO" if pb_kolon in ["EURO", "EUR", "€"] else "TL"
-    elif "EURO" in fiyat_str or "€" in fiyat_str or "BANNER" in marka_ust:
+    elif "EURO" in fiyat_str or "€" in fiyat_str or "BANNER" in str(marka).upper():
         birim = "EURO"
     else:
         birim = "TL"
@@ -73,7 +73,6 @@ def ana_sayfa():
         item['fiyat_gosterim'] = format_fiyat(item.get('fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
         if item.get('indirimli_fiyat'):
             item['indirimli_gosterim'] = format_fiyat(item.get('indirimli_fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
-        # Resim ismini temizle ve güvenli hale getir
         item['resim_temiz'] = str(item.get('resim', '')).strip()
 
     reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
