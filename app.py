@@ -9,9 +9,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 app = Flask(otovolkan)
-app.secret_key = "Oto959595-"
+app.secret_key = "oTO959595-"
 
-# --- AYARLAR ---
+# --- KURUMSAL AYARLAR ---
 SAYIN_USTA_TELEFON = "905335033019"  # WhatsApp numaranız (Örn: 905321234567)
 MAIL_ADRESI = "voxoraku@gmail.com"  # Gmail adresiniz
 MAIL_SIFRESI = "gpml fttc uzzu zvaa"  # Gmail'den aldığınız 16 haneli Uygulama Şifresi
@@ -22,16 +22,21 @@ def format_fiyat(deger, para_birimi_kolonu="", marka=""):
     if not deger: return "0,00 TL"
     fiyat_str = str(deger).upper().strip()
     pb_kolon = str(para_birimi_kolonu).upper().strip()
+    # Para birimi belirleme
     if pb_kolon in ["TL", "EURO", "TRY", "EUR", "€", "₺"]:
         birim = "EURO" if pb_kolon in ["EURO", "EUR", "€"] else "TL"
     elif "EURO" in fiyat_str or "€" in fiyat_str or "BANNER" in str(marka).upper():
         birim = "EURO"
     else: birim = "TL"
+    # Sayı formatlama
     sayi_metin = re.sub(r'[^\d,.]', '', fiyat_str)
     try:
-        if ',' in sayi_metin and '.' in sayi_metin: sayi = float(sayi_metin.replace('.', '').replace(',', '.'))
-        elif ',' in sayi_metin: sayi = float(sayi_metin.replace(',', '.'))
-        else: sayi = float(sayi_metin)
+        if ',' in sayi_metin and '.' in sayi_metin:
+            sayi = float(sayi_metin.replace('.', '').replace(',', '.'))
+        elif ',' in sayi_metin:
+            sayi = float(sayi_metin.replace(',', '.'))
+        else:
+            sayi = float(sayi_metin)
         return f"{sayi:,.2f} {birim}".replace(',', 'X').replace('.', ',').replace('X', '.')
     except: return f"{deger} {birim}"
 
@@ -94,6 +99,7 @@ def ana_sayfa():
 
 @app.route('/sepete_ekle/<urun_no>')
 def sepete_ekle(urun_no):
+    if not session.get('giris_yapildi'): return redirect(url_for('login'))
     sepet = session.get('sepet', {})
     sepet[str(urun_no)] = sepet.get(str(urun_no), 0) + 1
     session['sepet'] = sepet
@@ -125,6 +131,7 @@ def sepetim():
 
 @app.route('/siparis_tamamla', methods=['POST'])
 def siparis_tamamla():
+    if not session.get('giris_yapildi'): return jsonify({"hata": "Giriş gerekli"}), 403
     sepet = session.get('sepet', {})
     if not sepet: return jsonify({"hata": "Sepet boş"}), 400
     
@@ -149,8 +156,8 @@ def siparis_tamamla():
         msg['From'] = MAIL_ADRESI
         msg['To'] = ALICI_MAIL
         msg['Subject'] = f"Sipariş: {s_no} - {bayi}"
-        html = f"<h3>Yeni Sipariş: {s_no}</h3><p>Bayi: {bayi}<br>Tarih: {tarih}</p><table border='1'>{tablo_html}</table>"
-        msg.attach(MIMEText(html, 'html'))
+        html_body = f"<h3>Sipariş No: {s_no}</h3><p><b>Bayi:</b> {bayi}<br><b>Tarih:</b> {tarih}</p><table border='1' cellpadding='5' style='border-collapse:collapse;'><tr><th>No</th><th>Ürün</th><th>Adet</th></tr>{tablo_html}</table>"
+        msg.attach(MIMEText(html_body, 'html'))
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(MAIL_ADRESI, MAIL_SIFRESI)
@@ -159,13 +166,19 @@ def siparis_tamamla():
 
     session['sepet'] = {}
     session.modified = True
-    return jsonify({"mesaj": "Sipariş Alındı!", "siparis_no": s_no})
+    return jsonify({"mesaj": "Sipariş Başarıyla Alındı!", "siparis_no": s_no})
+
+@app.route('/sepet_temizle', methods=['POST'])
+def sepet_temizle():
+    session['sepet'] = {}
+    session.modified = True
+    return jsonify({"mesaj": "Sepet temizlendi"})
 
 @app.route('/siparislerim')
 def siparislerim():
     if not session.get('giris_yapildi'): return redirect(url_for('login'))
-    tum_siparisler = siparisleri_yukle()
-    bayi_siparisleri = [s for s in tum_siparisler if s['bayi'] == session['bayi_adi']]
+    tum_liste = siparisleri_yukle()
+    bayi_siparisleri = [s for s in tum_liste if s['bayi'] == session['bayi_adi']]
     return render_template('siparisler.html', siparisler=bayi_siparisleri[::-1], bayi_adi=session['bayi_adi'])
 
 @app.route('/sepet_sil/<urun_no>')
