@@ -17,8 +17,6 @@ MAIL_ADRESI = "voxoraku@gmail.com"  # Gmail adresiniz
 MAIL_SIFRESI = "gpml fttc uzzu zvaa"  # Gmail'den aldığınız 16 haneli Uygulama Şifresi
 ALICI_MAIL = "info@otovolkan.com"   # Siparişlerin düşeceği e-posta adresi
 
-# Render'da yazma izni olan klasör (Hata almamak için buraya kaydediyoruz)
-SIPARIS_DOSYASI = '/tmp/siparisler.json'
 
 def format_fiyat(deger, para_birimi_kolonu="", marka=""):
     if not deger: return "0,00 TL"
