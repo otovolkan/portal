@@ -10,22 +10,14 @@
     </style>
 </head>
 <body>
-<nav class="navbar navbar-dark bg-primary shadow-sm py-3">
-    <div class="container d-flex justify-content-between align-items-center">
-        <a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a>
-        <a href="/" class="btn btn-outline-light btn-sm fw-bold shadow-sm px-4">← ALIŞVERİŞE DEVAM ET</a>
-    </div>
-</nav>
-
+<nav class="navbar navbar-dark bg-primary shadow-sm py-3"><div class="container d-flex justify-content-between align-items-center"><a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a><a href="/" class="btn btn-outline-light btn-sm fw-bold shadow-sm px-4">← ALIŞVERİŞE DEVAM ET</a></div></nav>
 <div class="container mt-5">
     <div class="bg-white p-5 rounded-4 shadow border border-primary border-opacity-10">
         <h2 class="fw-bold text-primary mb-4 text-uppercase">🛒 SİPARİŞ LİSTENİZ</h2><hr>
         {% if sepet %}
         <div class="table-container">
             <table class="table align-middle text-center table-hover mb-0">
-                <thead class="table-dark">
-                    <tr><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>ADET</th><th>BİRİM FİYAT</th><th>ARA TOPLAM</th><th>İŞLEM</th></tr>
-                </thead>
+                <thead class="table-dark"><tr><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>ADET</th><th>BİRİM FİYAT</th><th>ARA TOPLAM</th><th>İŞLEM</th></tr></thead>
                 <tbody>
                     {% for p in sepet %}
                     <tr class="sepet-satir" data-no="{{ p.urun_no }}" data-ad="{{ p.urun_adi }}" data-adet="{{ p.adet }}" data-birim="{{ p.birim_gosterim }}" data-toplam="{{ p.ara_toplam_gosterim }}">
@@ -40,59 +32,27 @@
                 </tbody>
             </table>
         </div>
-        
         <div class="mt-5 toplam-kutu text-end">
             <div class="mb-2 fw-bold text-dark fs-5">TL TOPLAMI: <span id="topTl" class="text-primary">{{ toplam_tl }}</span></div>
             <div class="mb-4 fw-bold text-success fs-3">EURO TOPLAMI: <span id="topEur">{{ toplam_euro }}</span></div>
             <div class="d-flex justify-content-end gap-3">
-                <button class="btn btn-info btn-lg fw-bold text-white px-5 py-3 rounded-pill shadow" onclick="emailSiparisTamamla()">📧 E-POSTA İLE GÖNDER</button>
-                <button class="btn btn-success btn-lg fw-bold px-5 py-3 rounded-pill shadow" onclick="wpSiparisTamamla()">🟢 WHATSAPP İLE GÖNDER</button>
+                <button class="btn btn-info btn-lg fw-bold text-white px-5 py-3 rounded-pill shadow" onclick="emailSiparisTamamla()">📧 SİPARİŞİ TAMAMLA</button>
             </div>
         </div>
-        {% else %}
-        <div class="text-center py-5">
-            <h3 class="text-muted mb-4">Sepetiniz şu an boş.</h3>
-            <a href="/" class="btn btn-primary mt-3 px-5 py-3 fw-bold rounded-pill shadow fs-5">Hemen Ürün Sorgula</a>
-        </div>
-        {% endif %}
+        {% else %}<div class="text-center py-5"><h3 class="text-muted mb-4">Sepetiniz şu an boş.</h3><a href="/" class="btn btn-primary mt-3 px-5 py-3 fw-bold rounded-pill shadow fs-5">Hemen Ürün Sorgula</a></div>{% endif %}
     </div>
 </div>
-
 <script>
 function emailSiparisTamamla() {
-    if(!confirm("Siparişi e-posta ile merkeze iletmek istiyor musunuz?")) return;
-    fetch('/siparis_tamamla', { method: 'POST' })
-    .then(r => r.json())
-    .then(data => {
+    if(!confirm("Siparişi merkeze iletmek istiyor musunuz?")) return;
+    fetch('/siparis_tamamla', { method: 'POST' }).then(r => r.json()).then(data => {
         if(data.siparis_no) {
-            alert("Sipariş No: " + data.siparis_no + "\n" + data.mesaj);
+            let mesaj = "*SİPARİŞ NO: " + data.siparis_no + "*\n*Bayi:* {{ bayi_adi }}\n\n";
+            document.querySelectorAll('.sepet-satir').forEach((satir) => { mesaj += "📦 *" + satir.dataset.ad + "* (" + satir.dataset.no + ") - " + satir.dataset.adet + " Adet\n"; });
+            alert("Sipariş Alındı No: " + data.siparis_no);
+            window.open("https://wa.me/{{ wp_no }}?text=" + encodeURIComponent(mesaj), '_blank');
             window.location.href = "/siparislerim";
-        } else {
-            alert("Hata: " + data.hata);
-        }
-    });
-}
-
-function wpSiparisTamamla() {
-    let bayi = "{{ bayi_adi }}";
-    let telefon = "{{ wp_no }}";
-    let mesaj = "*OTO VOLKAN B2B SİPARİŞİ*\n*Bayi:* " + bayi + "\n\n";
-    
-    document.querySelectorAll('.sepet-satir').forEach((satir) => {
-        mesaj += "📦 *" + satir.dataset.ad + "* (" + satir.dataset.no + ")\n";
-        mesaj += "   " + satir.dataset.adet + " Adet x " + satir.dataset.birim + " = " + satir.dataset.toplam + "\n";
-    });
-    
-    mesaj += "\n*TL TOPLAM:* " + document.getElementById('topTl').innerText;
-    mesaj += "\n*EURO TOPLAM:* " + document.getElementById('topEur').innerText;
-    mesaj += "\n\n_Siparişimi onaylıyorum._";
-    
-    window.open("https://wa.me/" + telefon + "?text=" + encodeURIComponent(mesaj), '_blank');
-    
-    // WhatsApp'a yönlendirdikten sonra sepeti temizleyelim
-    fetch('/sepet_temizle', { method: 'POST' }).then(() => {
-        alert("WhatsApp yönlendirmesi yapıldı. Sepetiniz temizlendi.");
-        window.location.href = "/siparislerim";
+        } else { alert("Hata: " + data.hata); }
     });
 }
 </script>
