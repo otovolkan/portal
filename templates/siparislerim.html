@@ -3,10 +3,52 @@
 <head>
     <meta charset="UTF-8"><title>Siparişlerim - Oto Volkan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>.siparis-kart { border-left: 6px solid #0d6efd; margin-bottom: 25px; border-radius: 12px; transition: 0.3s; }</style>
+    <style>
+        body { background-color: #f8f9fa; }
+        .siparis-kart { border-left: 6px solid #0d6efd; margin-bottom: 25px; border-radius: 12px; transition: 0.3s; }
+        .siparis-kart:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+    </style>
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-dark bg-primary py-3"><div class="container d-flex justify-content-between"><a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a><a href="/" class="btn btn-outline-light fw-bold px-4">← KATALOĞA DÖN</a></div></nav>
-<div class="container mt-5"><h2 class="fw-bold text-primary mb-4 text-uppercase">📜 SİPARİŞ GEÇMİŞİNİZ</h2><hr>{% if siparisler %}{% for s in siparisler %}<div class="card shadow-sm siparis-kart"><div class="card-header bg-white d-flex justify-content-between align-items-center py-3"><h5 class="mb-0 text-primary fw-bold">SİPARİŞ NO: {{ s.siparis_no }}</h5><span class="badge bg-secondary fs-6">{{ s.tarih }}</span></div><div class="card-body p-4"><table class="table table-hover align-middle mb-0"><thead><tr class="table-light"><th>PARÇA NO</th><th>ÜRÜN ADI</th><th>ADET</th></tr></thead><tbody>{% for u in s.urunler %}<tr><td class="fw-bold text-secondary">{{ u.no }}</td><td class="fw-bold">{{ u.ad }}</td><td><span class="badge bg-primary px-3 py-2 fs-6">{{ u.adet }} Adet</span></td></tr>{% endfor %}</tbody></table></div></div>{% endfor %}{% else %}<div class="text-center py-5 bg-white rounded-4 shadow-sm border"><h4 class="text-muted mb-0">Henüz kayıtlı bir siparişiniz bulunmuyor.</h4></div>{% endif %}</div>
+<body>
+<nav class="navbar navbar-dark bg-primary shadow-sm py-3">
+    <div class="container d-flex justify-content-between align-items-center">
+        <a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a>
+        <a href="/" class="btn btn-outline-light fw-bold px-4">← KATALOĞA DÖN</a>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <h2 class="fw-bold text-primary mb-4 text-uppercase">📜 SİPARİŞ GEÇMİŞİNİZ</h2><hr>
+    {% if siparisler %}
+        {% for s in siparisler %}
+        <div class="card shadow-sm siparis-kart">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0 text-primary fw-bold">SİPARİŞ NO: {{ s.siparis_no }}</h5>
+                <span class="badge bg-secondary fs-6">{{ s.tarih }}</span>
+            </div>
+            <div class="card-body p-4">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="table-light">
+                        <tr><th>PARÇA NO</th><th>ÜRÜN ADI</th><th>ADET</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for u in s.urunler %}
+                        <tr>
+                            <td class="fw-bold text-secondary">{{ u.no }}</td>
+                            <td class="fw-bold text-start">{{ u.ad }}</td>
+                            <td><span class="badge bg-primary px-3 py-2 fs-6">{{ u.adet }} Adet</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm border">
+            <h4 class="text-muted mb-0">Henüz kayıtlı bir siparişiniz bulunmuyor.</h4>
+        </div>
+    {% endif %}
+</div>
 </body>
 </html>
