@@ -11,12 +11,14 @@ from email.mime.multipart import MIMEMultipart
 app = Flask(__name__)
 app.secret_key = "oTO959595-"
 
-# --- KURUMSAL AYARLARINIZ ---
+# --- KURUMSAL AYARLAR ---
 SAYIN_USTA_TELEFON = "905335033019"  # WhatsApp numaranız (Örn: 905321234567)
 MAIL_ADRESI = "voxoraku@gmail.com"  # Gmail adresiniz
 MAIL_SIFRESI = "gpml fttc uzzu zvaa"  # Gmail'den aldığınız 16 haneli Uygulama Şifresi
 ALICI_MAIL = "info@otovolkan.com"   # Siparişlerin düşeceği e-posta adresi
-SIPARIS_DOSYASI = 'siparisler.json'
+
+# Render'da yazma izni olan geçici klasör (Hata almamak için)
+SIPARIS_DOSYASI = '/tmp/siparisler.json'
 
 def format_fiyat(deger, para_birimi_kolonu="", marka=""):
     if not deger: return "0,00 TL"
@@ -58,14 +60,17 @@ def siparisleri_yukle():
     if not os.path.exists(SIPARIS_DOSYASI): return []
     try:
         with open(SIPARIS_DOSYASI, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+            return data if isinstance(data, list) else []
     except: return []
 
 def siparis_kaydet(yeni_siparis):
     siparisler = siparisleri_yukle()
     siparisler.append(yeni_siparis)
-    with open(SIPARIS_DOSYASI, 'w', encoding='utf-8') as f:
-        json.dump(siparisler, f, ensure_ascii=False, indent=4)
+    try:
+        with open(SIPARIS_DOSYASI, 'w', encoding='utf-8') as f:
+            json.dump(siparisler, f, ensure_ascii=False, indent=4)
+    except: pass
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -91,7 +96,7 @@ def ana_sayfa():
         item['resim_temiz'] = str(item.get('resim', '')).strip()
     markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')])))
     urunler = [u for u in items if (arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()) and (not secili_marka or str(u['marka']) == secili_marka)]
-    sepet_sayisi = sum(session.get('sepet', {}).values())
+    sepet_sayisi = sum(session.get('sepet', {}).values()) if session.get('sepet') else 0
     return render_template('index.html', urunler=urunler, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'])
 
 @app.route('/sepete_ekle/<urun_no>')
@@ -152,9 +157,9 @@ def siparis_tamamla():
         msg = MIMEMultipart()
         msg['From'] = MAIL_ADRESI
         msg['To'] = ALICI_MAIL
-        msg['Subject'] = f"Sipariş: {s_no} - {bayi}"
-        html_body = f"<h3>Sipariş No: {s_no}</h3><p><b>Bayi:</b> {bayi}<br><b>Tarih:</b> {tarih}</p><table border='1' cellpadding='5' style='border-collapse:collapse;'><tr><th>No</th><th>Ürün</th><th>Adet</th></tr>{tablo_html}</table>"
-        msg.attach(MIMEText(html_body, 'html'))
+        msg['Subject'] = f"Yeni Sipariş: {s_no} - {bayi}"
+        html = f"<h3>Yeni B2B Siparişi</h3><p>No: {s_no}<br>Bayi: {bayi}</p><table border='1'>{tablo_html}</table>"
+        msg.attach(MIMEText(html, 'html'))
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(MAIL_ADRESI, MAIL_SIFRESI)
@@ -163,7 +168,7 @@ def siparis_tamamla():
 
     session['sepet'] = {}
     session.modified = True
-    return jsonify({"mesaj": "Sipariş Başarıyla Alındı!", "siparis_no": s_no})
+    return jsonify({"mesaj": "Sipariş Alındı!", "siparis_no": s_no})
 
 @app.route('/sepet_temizle', methods=['POST'])
 def sepet_temizle():
