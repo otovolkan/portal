@@ -17,7 +17,7 @@ MAIL_ADRESI = "voxoraku@gmail.com"  # Gmail adresiniz
 MAIL_SIFRESI = "gpml fttc uzzu zvaa"  # Gmail'den aldığınız 16 haneli Uygulama Şifresi
 ALICI_MAIL = "info@otovolkan.com"   # Siparişlerin düşeceği e-posta adresi
 
-# Render'da yazma izni olan geçici klasör (Hata almamak için)
+# Render'da yazma izni olan klasör (Hata almamak için buraya kaydediyoruz)
 SIPARIS_DOSYASI = '/tmp/siparisler.json'
 
 def format_fiyat(deger, para_birimi_kolonu="", marka=""):
@@ -157,9 +157,9 @@ def siparis_tamamla():
         msg = MIMEMultipart()
         msg['From'] = MAIL_ADRESI
         msg['To'] = ALICI_MAIL
-        msg['Subject'] = f"Yeni Sipariş: {s_no} - {bayi}"
-        html = f"<h3>Yeni B2B Siparişi</h3><p>No: {s_no}<br>Bayi: {bayi}</p><table border='1'>{tablo_html}</table>"
-        msg.attach(MIMEText(html, 'html'))
+        msg['Subject'] = f"Sipariş: {s_no} - {bayi}"
+        html_body = f"<h3>Yeni B2B Siparişi</h3><p><b>No:</b> {s_no}<br><b>Bayi:</b> {bayi}<br><b>Tarih:</b> {tarih}</p><table border='1' cellpadding='5' style='border-collapse:collapse;'><tr><th>No</th><th>Ürün Adı</th><th>Adet</th></tr>{tablo_html}</table>"
+        msg.attach(MIMEText(html_body, 'html'))
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(MAIL_ADRESI, MAIL_SIFRESI)
