@@ -1,54 +1,38 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8"><title>Siparişlerim</title>
+    <meta charset="UTF-8"><title>Siparişlerim - Oto Volkan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .siparis-kart { border-left: 5px solid #0d6efd; margin-bottom: 20px; }
+    </style>
 </head>
-<body class="bg-light p-4">
-<div class="container bg-white p-4 rounded shadow border-0">
-    <div class="d-flex justify-content-between mb-4 border-bottom pb-2 align-items-center">
-        <div>
-            <h2 class="fw-bold text-primary mb-0">📋 SİPARİŞLERİM</h2>
-            <small class="text-muted">Bayi: <b>{{ bayi_adi }}</b></small>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-primary shadow-sm py-3"><div class="container d-flex justify-content-between align-items-center"><a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a><a href="/" class="btn btn-outline-light fw-bold px-4">KATALOĞA DÖN</a></div></nav>
+<div class="container mt-5">
+    <h2 class="fw-bold text-primary mb-4 text-uppercase">📜 SİPARİŞ GEÇMİŞİM</h2>
+    {% if siparisler %}
+        {% for s in siparisler %}
+        <div class="card shadow-sm siparis-kart">
+            <div class="card-header bg-white d-flex justify-content-between">
+                <h5 class="mb-0 text-primary fw-bold">No: {{ s.siparis_no }}</h5>
+                <span class="badge bg-secondary">{{ s.tarih }}</span>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light"><tr><th>Parça No</th><th>Ürün Adı</th><th>Adet</th></tr></thead>
+                    <tbody>
+                        {% for u in s.urunler %}
+                        <tr><td>{{ u.no }}</td><td>{{ u.ad }}</td><td>{{ u.adet }} Adet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <a href="/" class="btn btn-outline-primary fw-bold">⬅ Kataloğa Dön</a>
-    </div>
-    <table class="table table-hover align-middle">
-        <thead class="table-dark">
-            <tr><th>No</th><th>Tarih</th><th>Saat</th><th>Toplam</th><th>İşlem</th></tr>
-        </thead>
-        <tbody>
-            {% for s in siparisler %}
-            <tr>
-                <td><b>#{{ s.siparis_no }}</b></td>
-                <td>{{ s.tarih }}</td>
-                <td>{{ s.saat }}</td>
-                <td class="fw-bold text-success">{{ s.toplam }}</td>
-                <td><button class="btn btn-sm btn-primary fw-bold" onclick="detay('{{ loop.index }}')">DETAY</button></td>
-            </tr>
-            <tr id="d-{{ loop.index }}" style="display:none;" class="bg-light">
-                <td colspan="5" class="p-3">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header py-1 small fw-bold bg-secondary text-white">Sipariş İçeriği (#{{ s.siparis_no }})</div>
-                        <ul class="list-group list-group-flush">
-                            {% for u in s.urunler %}
-                            <li class="list-group-item d-flex justify-content-between p-2 small">
-                                <span>{{ u.ad }}</span><b>{{ u.adet }} Adet</b>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm border"><h4 class="text-muted">Henüz kayıtlı bir siparişiniz bulunmuyor.</h4></div>
+    {% endif %}
 </div>
-<script>
-function detay(id) {
-    let p = document.getElementById('d-' + id);
-    p.style.display = (p.style.display === 'none') ? 'table-row' : 'none';
-}
-</script>
 </body>
 </html>
