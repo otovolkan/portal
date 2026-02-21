@@ -11,7 +11,7 @@ from email.mime.multipart import MIMEMultipart
 app = Flask(otovolkan)
 app.secret_key = "Oto959595-"
 
-# --- AYARLARINIZI BURADAN YAPIN ---
+# --- AYARLAR ---
 SAYIN_USTA_TELEFON = "905335033019"  # WhatsApp numaranız (Örn: 905321234567)
 MAIL_ADRESI = "voxoraku@gmail.com"  # Gmail adresiniz
 MAIL_SIFRESI = "gpml fttc uzzu zvaa"  # Gmail'den aldığınız 16 haneli Uygulama Şifresi
@@ -22,25 +22,18 @@ def format_fiyat(deger, para_birimi_kolonu="", marka=""):
     if not deger: return "0,00 TL"
     fiyat_str = str(deger).upper().strip()
     pb_kolon = str(para_birimi_kolonu).upper().strip()
-    
     if pb_kolon in ["TL", "EURO", "TRY", "EUR", "€", "₺"]:
         birim = "EURO" if pb_kolon in ["EURO", "EUR", "€"] else "TL"
     elif "EURO" in fiyat_str or "€" in fiyat_str or "BANNER" in str(marka).upper():
         birim = "EURO"
-    else:
-        birim = "TL"
-    
+    else: birim = "TL"
     sayi_metin = re.sub(r'[^\d,.]', '', fiyat_str)
     try:
-        if ',' in sayi_metin and '.' in sayi_metin:
-            sayi = float(sayi_metin.replace('.', '').replace(',', '.'))
-        elif ',' in sayi_metin:
-            sayi = float(sayi_metin.replace(',', '.'))
-        else:
-            sayi = float(sayi_metin)
+        if ',' in sayi_metin and '.' in sayi_metin: sayi = float(sayi_metin.replace('.', '').replace(',', '.'))
+        elif ',' in sayi_metin: sayi = float(sayi_metin.replace(',', '.'))
+        else: sayi = float(sayi_metin)
         return f"{sayi:,.2f} {birim}".replace(',', 'X').replace('.', ',').replace('X', '.')
-    except:
-        return f"{deger} {birim}"
+    except: return f"{deger} {birim}"
 
 def fiyat_sayiya_cevir(deger):
     if not deger: return 0.0
@@ -58,14 +51,12 @@ def verileri_yukle(sayfa_adi):
         return df.fillna('').to_dict(orient='records')
     except: return []
 
-# SİPARİŞ VERİTABANI YÖNETİMİ
 def siparisleri_yukle():
     if os.path.exists(SIPARIS_DOSYASI):
-        with open(SIPARIS_DOSYASI, 'r', encoding='utf-8') as f:
-            try:
+        try:
+            with open(SIPARIS_DOSYASI, 'r', encoding='utf-8') as f:
                 return json.load(f)
-            except:
-                return []
+        except: return []
     return []
 
 def siparis_kaydet(yeni_siparis):
@@ -92,22 +83,17 @@ def ana_sayfa():
     arama = request.args.get('search', '').lower()
     secili_marka = request.args.get('marka', '')
     items = verileri_yukle('urunler')
-    
     for item in items:
         pb = item.get('para_birimi', '')
         item['fiyat_gosterim'] = format_fiyat(item.get('fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
         item['resim_temiz'] = str(item.get('resim', '')).strip()
-
     markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')])))
     urunler = [u for u in items if (arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()) and (not secili_marka or str(u['marka']) == secili_marka)]
-    
-    sepet = session.get('sepet', {})
-    sepet_sayisi = sum(sepet.values()) if sepet else 0
+    sepet_sayisi = sum(session.get('sepet', {}).values())
     return render_template('index.html', urunler=urunler, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'])
 
 @app.route('/sepete_ekle/<urun_no>')
 def sepete_ekle(urun_no):
-    if not session.get('giris_yapildi'): return redirect(url_for('login'))
     sepet = session.get('sepet', {})
     sepet[str(urun_no)] = sepet.get(str(urun_no), 0) + 1
     session['sepet'] = sepet
@@ -130,21 +116,15 @@ def sepetim():
             is_euro = (pb in ["EURO", "EUR", "€"] or "EURO" in str(urun.get('fiyat')).upper())
             if is_euro: t_euro += ara_toplam
             else: t_tl += ara_toplam
-            
             u_copy = urun.copy()
             u_copy['adet'] = adet
             u_copy['birim_gosterim'] = format_fiyat(urun.get('fiyat'), para_birimi_kolonu=pb)
             u_copy['ara_toplam_gosterim'] = f"{ara_toplam:,.2f} {'EURO' if is_euro else 'TL'}".replace(',', 'X').replace('.', ',').replace('X', '.')
             sepet_listesi.append(u_copy)
-            
-    return render_template('sepet.html', sepet=sepet_listesi, 
-                           toplam_tl=f"{t_tl:,.2f} TL".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                           toplam_euro=f"{t_euro:,.2f} EURO".replace(',', 'X').replace('.', ',').replace('X', '.'),
-                           bayi_adi=session['bayi_adi'], wp_no=SAYIN_USTA_TELEFON)
+    return render_template('sepet.html', sepet=sepet_listesi, toplam_tl=f"{t_tl:,.2f} TL".replace(',', 'X').replace('.', ',').replace('X', '.'), toplam_euro=f"{t_euro:,.2f} EURO".replace(',', 'X').replace('.', ',').replace('X', '.'), bayi_adi=session['bayi_adi'], wp_no=SAYIN_USTA_TELEFON)
 
 @app.route('/siparis_tamamla', methods=['POST'])
 def siparis_tamamla():
-    if not session.get('giris_yapildi'): return jsonify({"hata": "Giriş gerekli"}), 403
     sepet = session.get('sepet', {})
     if not sepet: return jsonify({"hata": "Sepet boş"}), 400
     
@@ -152,36 +132,32 @@ def siparis_tamamla():
     s_no = f"B2B-{1000 + len(gecmis) + 1}"
     tarih = datetime.now().strftime("%d.%m.%Y %H:%M")
     bayi = session['bayi_adi']
-    
     tum_urunler = verileri_yukle('urunler')
+    
     siparis_detay = []
     tablo_html = ""
-    
     for u_no, adet in sepet.items():
         urun = next((u for u in tum_urunler if str(u['urun_no']) == u_no), None)
         if urun:
             siparis_detay.append({"no": u_no, "ad": urun['urun_adi'], "adet": adet})
             tablo_html += f"<tr><td>{u_no}</td><td>{urun['urun_adi']}</td><td>{adet} Adet</td></tr>"
 
-    # Kayıt
     siparis_kaydet({"siparis_no": s_no, "bayi": bayi, "tarih": tarih, "urunler": siparis_detay})
 
-    # Email
     try:
         msg = MIMEMultipart()
         msg['From'] = MAIL_ADRESI
         msg['To'] = ALICI_MAIL
-        msg['Subject'] = f"Yeni Sipariş: {s_no} - {bayi}"
-        html = f"<h3>Yeni B2B Siparişi</h3><p><b>No:</b> {s_no}<br><b>Bayi:</b> {bayi}<br><b>Tarih:</b> {tarih}</p><table border='1' cellpadding='5'><tr><th>No</th><th>Ürün Adı</th><th>Adet</th></tr>{tablo_html}</table>"
+        msg['Subject'] = f"Sipariş: {s_no} - {bayi}"
+        html = f"<h3>Yeni Sipariş: {s_no}</h3><p>Bayi: {bayi}<br>Tarih: {tarih}</p><table border='1'>{tablo_html}</table>"
         msg.attach(MIMEText(html, 'html'))
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(MAIL_ADRESI, MAIL_SIFRESI)
             server.send_message(msg)
-    except:
-        pass
+    except: pass
 
-    session['sepet'] = {} # Sepeti boşalt
+    session['sepet'] = {}
     session.modified = True
     return jsonify({"mesaj": "Sipariş Alındı!", "siparis_no": s_no})
 
