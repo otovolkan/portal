@@ -8,10 +8,10 @@ from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-app = Flask(otovolkan)
+app = Flask(__name__)
 app.secret_key = "oTO959595-"
 
-# --- KURUMSAL AYARLAR ---
+# --- KURUMSAL AYARLARINIZ ---
 SAYIN_USTA_TELEFON = "905335033019"  # WhatsApp numaranız (Örn: 905321234567)
 MAIL_ADRESI = "voxoraku@gmail.com"  # Gmail adresiniz
 MAIL_SIFRESI = "gpml fttc uzzu zvaa"  # Gmail'den aldığınız 16 haneli Uygulama Şifresi
@@ -22,13 +22,11 @@ def format_fiyat(deger, para_birimi_kolonu="", marka=""):
     if not deger: return "0,00 TL"
     fiyat_str = str(deger).upper().strip()
     pb_kolon = str(para_birimi_kolonu).upper().strip()
-    # Para birimi belirleme
     if pb_kolon in ["TL", "EURO", "TRY", "EUR", "€", "₺"]:
         birim = "EURO" if pb_kolon in ["EURO", "EUR", "€"] else "TL"
     elif "EURO" in fiyat_str or "€" in fiyat_str or "BANNER" in str(marka).upper():
         birim = "EURO"
     else: birim = "TL"
-    # Sayı formatlama
     sayi_metin = re.sub(r'[^\d,.]', '', fiyat_str)
     try:
         if ',' in sayi_metin and '.' in sayi_metin:
@@ -57,12 +55,11 @@ def verileri_yukle(sayfa_adi):
     except: return []
 
 def siparisleri_yukle():
-    if os.path.exists(SIPARIS_DOSYASI):
-        try:
-            with open(SIPARIS_DOSYASI, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except: return []
-    return []
+    if not os.path.exists(SIPARIS_DOSYASI): return []
+    try:
+        with open(SIPARIS_DOSYASI, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except: return []
 
 def siparis_kaydet(yeni_siparis):
     siparisler = siparisleri_yukle()
