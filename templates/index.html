@@ -6,8 +6,6 @@
     <style>
         .brand-title { line-height: 1.1; }
         .bayi-vurgu { font-size: 0.85rem; color: #fff; margin-top: 5px; opacity: 0.9; display: block; }
-        .reklam-kutu { height: 400px; overflow: hidden; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #fff; border: 1px solid #dee2e6; }
-        .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; padding: 15px; }
         .modal-custom { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); }
         .modal-content-custom { position: relative; background: #fff; margin: 3% auto; padding: 20px; width: 50%; border-radius: 15px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
         .close-btn { position: absolute; right: 20px; top: 15px; font-size: 35px; cursor: pointer; color: #333; font-weight: bold; }
@@ -28,59 +26,50 @@
             <span class="bayi-vurgu">Hoş Geldiniz: <b class="text-warning">{{ bayi_adi }}</b></span>
         </div>
         <div class="d-flex align-items-center">
+            <a href="/siparislerim" class="btn btn-outline-light me-2 fw-bold shadow-sm">📜 SİPARİŞLERİM</a>
             <a href="/sepetim" class="btn btn-warning btn-lg me-3 shadow-sm fw-bold position-relative">🛒 SEPETİM <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ sepet_sayisi }}</span></a>
             <a href="/cikis" class="btn btn-outline-light fw-bold shadow-sm">ÇIKIŞ</a>
         </div>
     </div>
 </nav>
 <div class="container mt-4">
-    <div class="row">
-        {% if not arama_yapildi %}
-            {% for r in reklamlar %}<div class="col-md-4"><div class="reklam-kutu shadow"><img src="/static/images/{{ r.resim_temiz }}" onerror="smartTry(this, '{{ r.resim_temiz }}')"></div></div>{% endfor %}
-        {% endif %}
-    </div>
     <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary border-2">
         <form action="/" method="GET" class="row g-3 align-items-end">
             <div class="col-md-5"><label class="form-label fw-bold text-primary small">Ürün Arama</label><input type="text" name="search" class="form-control form-control-lg" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus></div>
-            <div class="col-md-4"><label class="form-label fw-bold text-primary small">Marka</label><select name="marka" class="form-select form-select-lg"><option value="">Tüm Markalar</option>{% for m in markalar %}<option value="{{ m }}" {% if secili_marka == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></div>
+            <div class="col-md-4"><label class="form-label fw-bold text-primary small">Marka</label><select name="marka" class="form-select form-select-lg">
+                <option value="">Tüm Markalar</option>
+                {% for m in markalar %}<option value="{{ m }}" {% if request.args.get('marka') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+            </select></div>
             <div class="col-md-3"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow">SORGULA</button></div>
         </form>
     </div>
-    {% if arama_yapildi %}
-        <div class="bg-white rounded-4 shadow-sm overflow-hidden border">
-            <table class="table table-hover align-middle mb-0 text-center">
-                <thead class="table-dark"><tr><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>MARKA</th><th>FİYAT</th><th>STOK</th><th>İŞLEM</th></tr></thead>
-                <tbody>
-                    {% for p in urunler %}
-                    <tr>
-                        <td class="fw-bold text-primary">{{ p.urun_no }}</td>
-                        <td class="text-start fw-bold text-dark small">{{ p.urun_adi }}</td>
-                        <td><span class="badge bg-secondary px-3 py-2 text-uppercase">{{ p.marka }}</span></td>
-                        <td class="fw-bold text-primary">{% if p.indirimli_gosterim %}<del class="text-muted small d-block">{{ p.fiyat_gosterim }}</del><span class="text-danger fw-bolder">{{ p.indirimli_gosterim }}</span>{% else %}{{ p.fiyat_gosterim }}{% endif %}</td>
-                        <td>{% if p.stok|int > 0 %}<span class="text-success fw-bold">✔ VAR</span>{% else %}<span class="text-danger fw-bold">✖ YOK</span>{% endif %}</td>
-                        <td>
-                            <div class="btn-group shadow-sm">
-                                <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary fw-bold">🛒 EKLE</a>
-                                <button class="btn btn-outline-dark fw-bold" onclick="forceOpen('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">🔍 GÖRSEL</button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endif %}
+    <div class="bg-white rounded-4 shadow-sm overflow-hidden border">
+        <table class="table table-hover align-middle mb-0 text-center">
+            <thead class="table-dark"><tr><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>MARKA</th><th>FİYAT</th><th>İŞLEM</th></tr></thead>
+            <tbody>
+                {% for p in urunler %}
+                <tr>
+                    <td class="fw-bold text-primary">{{ p.urun_no }}</td>
+                    <td class="text-start fw-bold text-dark small">{{ p.urun_adi }}</td>
+                    <td><span class="badge bg-secondary">{{ p.marka }}</span></td>
+                    <td class="fw-bold text-primary">{{ p.fiyat_gosterim }}</td>
+                    <td>
+                        <div class="btn-group shadow-sm">
+                            <a href="/sepete_ekle/{{ p.urun_no }}" class="btn btn-primary fw-bold">🛒 EKLE</a>
+                            <button class="btn btn-outline-dark fw-bold" onclick="forceOpen('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">🔍 GÖRSEL</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 <script>
 function openModal(imgSrc, title) {
     document.getElementById('modalImg').src = imgSrc;
     document.getElementById('modalTitle').innerText = title;
     document.getElementById('imageModal').style.display = 'block';
-}
-function smartTry(imgTag, name) {
-    let alt = name.includes('.PNG') ? name.replace('.PNG', '.png') : name.replace('.png', '.PNG');
-    imgTag.onerror = () => { imgTag.src = '/static/images/' + alt; imgTag.onerror = () => { imgTag.src = 'https://via.placeholder.com/400x400?text=Dosya+Yok'; }; };
-    imgTag.src = '/static/images/' + name;
 }
 function forceOpen(name, title) {
     let vars = [name, name.toLowerCase(), name.toUpperCase()];
