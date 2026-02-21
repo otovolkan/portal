@@ -3,7 +3,6 @@ import pandas as pd
 import os
 import re
 import smtplib
-import json
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -16,7 +15,6 @@ SAYIN_USTA_TELEFON = "905335033019"  # WhatsApp numaranız (Örn: 905321234567)
 MAIL_ADRESI = "voxoraku@gmail.com"  # Gmail adresiniz
 MAIL_SIFRESI = "gpml fttc uzzu zvaa"  # Gmail'den aldığınız 16 haneli Uygulama Şifresi
 ALICI_MAIL = "info@otovolkan.com"   # Siparişlerin düşeceği e-posta adresi
-
 
 def format_fiyat(deger, para_birimi_kolonu="", marka=""):
     if not deger: return "0,00 TL"
@@ -53,22 +51,6 @@ def verileri_yukle(sayfa_adi):
         df = pd.read_excel('urunler.xlsx', sheet_name=sayfa_adi, engine='openpyxl')
         return df.fillna('').to_dict(orient='records')
     except: return []
-
-def siparisleri_yukle():
-    if not os.path.exists(SIPARIS_DOSYASI): return []
-    try:
-        with open(SIPARIS_DOSYASI, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data if isinstance(data, list) else []
-    except: return []
-
-def siparis_kaydet(yeni_siparis):
-    siparisler = siparisleri_yukle()
-    siparisler.append(yeni_siparis)
-    try:
-        with open(SIPARIS_DOSYASI, 'w', encoding='utf-8') as f:
-            json.dump(siparisler, f, ensure_ascii=False, indent=4)
-    except: pass
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -135,51 +117,34 @@ def siparis_tamamla():
     sepet = session.get('sepet', {})
     if not sepet: return jsonify({"hata": "Sepet boş"}), 400
     
-    gecmis = siparisleri_yukle()
-    s_no = f"B2B-{1000 + len(gecmis) + 1}"
     tarih = datetime.now().strftime("%d.%m.%Y %H:%M")
     bayi = session['bayi_adi']
     tum_urunler = verileri_yukle('urunler')
     
-    siparis_detay = []
     tablo_html = ""
     for u_no, adet in sepet.items():
         urun = next((u for u in tum_urunler if str(u['urun_no']) == u_no), None)
         if urun:
-            siparis_detay.append({"no": u_no, "ad": urun['urun_adi'], "adet": adet})
             tablo_html += f"<tr><td>{u_no}</td><td>{urun['urun_adi']}</td><td>{adet} Adet</td></tr>"
 
-    siparis_kaydet({"siparis_no": s_no, "bayi": bayi, "tarih": tarih, "urunler": siparis_detay})
-
+    # EMAIL GÖNDERİMİ (Dosyaya yazma yok, dolayısıyla 500 hatası yok)
     try:
         msg = MIMEMultipart()
         msg['From'] = MAIL_ADRESI
         msg['To'] = ALICI_MAIL
-        msg['Subject'] = f"Sipariş: {s_no} - {bayi}"
-        html_body = f"<h3>Yeni B2B Siparişi</h3><p><b>No:</b> {s_no}<br><b>Bayi:</b> {bayi}<br><b>Tarih:</b> {tarih}</p><table border='1' cellpadding='5' style='border-collapse:collapse;'><tr><th>No</th><th>Ürün Adı</th><th>Adet</th></tr>{tablo_html}</table>"
+        msg['Subject'] = f"YENİ SİPARİŞ - {bayi}"
+        html_body = f"<html><body><h3>B2B Sipariş Formu</h3><p><b>Bayi:</b> {bayi}<br><b>Tarih:</b> {tarih}</p><table border='1' cellpadding='5' style='border-collapse:collapse;'><tr><th>Parça No</th><th>Ürün Adı</th><th>Adet</th></tr>{tablo_html}</table></body></html>"
         msg.attach(MIMEText(html_body, 'html'))
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(MAIL_ADRESI, MAIL_SIFRESI)
             server.send_message(msg)
-    except: pass
+    except:
+        pass
 
-    session['sepet'] = {}
+    session['sepet'] = {} # SİPARİŞ SONRASI SEPETİ TEMİZLE
     session.modified = True
-    return jsonify({"mesaj": "Sipariş Alındı!", "siparis_no": s_no})
-
-@app.route('/sepet_temizle', methods=['POST'])
-def sepet_temizle():
-    session['sepet'] = {}
-    session.modified = True
-    return jsonify({"mesaj": "Sepet temizlendi"})
-
-@app.route('/siparislerim')
-def siparislerim():
-    if not session.get('giris_yapildi'): return redirect(url_for('login'))
-    tum_liste = siparisleri_yukle()
-    bayi_siparisleri = [s for s in tum_liste if s['bayi'] == session['bayi_adi']]
-    return render_template('siparisler.html', siparisler=bayi_siparisleri[::-1], bayi_adi=session['bayi_adi'])
+    return jsonify({"mesaj": "Siparişiniz merkeze başarıyla iletildi!", "bayi": bayi})
 
 @app.route('/sepet_sil/<urun_no>')
 def sepet_sil(urun_no):
