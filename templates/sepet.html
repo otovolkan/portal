@@ -8,10 +8,10 @@
     </style>
 </head>
 <body class="bg-light">
-<nav class="navbar navbar-dark bg-primary shadow-sm py-3"><div class="container d-flex justify-content-between align-items-center"><a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a><a href="/" class="btn btn-outline-light btn-sm fw-bold shadow-sm px-4">← ALIŞVERİŞE DEVAM ET</a></div></nav>
+<nav class="navbar navbar-dark bg-primary shadow-sm py-3"><div class="container d-flex justify-content-between align-items-center"><a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a><a href="/" class="btn btn-outline-light btn-sm fw-bold shadow-sm px-4">← GERİ DÖN</a></div></nav>
 <div class="container mt-5">
     <div class="bg-white p-5 rounded-4 shadow border">
-        <h2 class="fw-bold text-primary mb-4 text-uppercase">🛒 SEPETİM</h2><hr>
+        <h2 class="fw-bold text-primary mb-4 text-uppercase">🛒 SEPETİMİZ</h2><hr>
         {% if sepet %}
         <div class="table-responsive">
             <table class="table align-middle text-center table-hover">
@@ -33,14 +33,14 @@
         <div class="mt-5 toplam-kutu text-end">
             <div class="mb-2 fw-bold text-dark">TL TOPLAMI: <span id="topTl">{{ toplam_tl }}</span></div>
             <div class="mb-4 fw-bold text-success fs-4">EURO TOPLAMI: <span id="topEur">{{ toplam_euro }}</span></div>
-            <button class="btn btn-success btn-xl fw-bold shadow-lg px-5 py-3 rounded-pill fs-4" onclick="siparisOnayla()">SİPARİŞİ ONAYLA</button>
+            <button class="btn btn-success btn-xl fw-bold shadow-lg px-5 py-3 rounded-pill fs-4" onclick="siparisTamamla()">SİPARİŞİ ONAYLA</button>
         </div>
-        {% else %}<div class="text-center py-5"><h3>Sepetiniz boş.</h3><a href="/" class="btn btn-primary mt-3 px-5 fw-bold">Ürün Sorgulamaya Git</a></div>{% endif %}
+        {% else %}<div class="text-center py-5"><h3>Sepetiniz boş.</h3><a href="/" class="btn btn-primary mt-3 px-5 fw-bold">Kataloğa Git</a></div>{% endif %}
     </div>
 </div>
 <script>
-function siparisOnayla() {
-    if(!confirm("Siparişi onaylıyor ve göndermek istiyor musunuz?")) return;
+function siparisTamamla() {
+    if(!confirm("Siparişi onaylıyor musunuz?")) return;
     fetch('/siparis_tamamla', { method: 'POST' })
     .then(r => r.json())
     .then(data => {
