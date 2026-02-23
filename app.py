@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
-# Uygulama ismini senin yedeğine göre güncelledim
+# HATA DÜZELTİLDİ: Flask(__name__) olarak güncellendi
 app = Flask(__name__)
 app.secret_key = "Oto959595-"
 
@@ -133,7 +133,8 @@ def siparis_tamamla():
     tum_urunler = verileri_yukle('urunler')
     tarih = datetime.now().strftime("%d.%m.%Y %H:%M")
     
-    icerik = f"<h3>Yeni B2B Siparişi Geldi!</h3><p><b>Bayi:</b> {bayi}</p><p><b>Tarih:</b> {tarih}</p><table border='1' cellpadding='5'><tr><th>Parça No</th><th>Ürün Adı</th><th>Adet</th></tr>"
+    # EMAIL İÇİN TABLO OLUŞTURMA
+    icerik = f"<h3>Yeni B2B Siparişi</h3><p><b>Bayi:</b> {bayi}</p><p><b>Tarih:</b> {tarih}</p><table border='1' cellpadding='5'><tr><th>Ürün No</th><th>Ürün Adı</th><th>Adet</th></tr>"
     for u_no, adet in sepet.items():
         urun = next((u for u in tum_urunler if str(u['urun_no']) == u_no), None)
         if urun: icerik += f"<tr><td>{u_no}</td><td>{urun['urun_adi']}</td><td>{adet}</td></tr>"
@@ -143,7 +144,7 @@ def siparis_tamamla():
         msg = MIMEMultipart()
         msg['From'] = MAIL_ADRESI
         msg['To'] = ALICI_MAIL
-        msg['Subject'] = f"OTO VOLKAN B2B SİPARİŞ - {bayi}"
+        msg['Subject'] = f"SİPARİŞ GELDİ - {bayi}"
         msg.attach(MIMEText(icerik, 'html'))
         
         server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -152,11 +153,11 @@ def siparis_tamamla():
         server.send_message(msg)
         server.quit()
         
-        session['sepet'] = {} # Sipariş başarılıysa sepeti temizle
+        session['sepet'] = {} # Başarılıysa sepeti temizle
         session.modified = True
-        return jsonify({"mesaj": "Sipariş e-posta ile iletildi!"})
+        return jsonify({"mesaj": "Sipariş mail ile iletildi!"})
     except Exception as e:
-        return jsonify({"hata": f"Mail hatası: {str(e)}"}), 500
+        return jsonify({"hata": str(e)}), 500
 
 @app.route('/sepet_sil/<urun_no>')
 def sepet_sil(urun_no):
