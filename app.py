@@ -122,31 +122,31 @@ def siparis_tamamla():
     tum_urunler = verileri_yukle('urunler')
     tarih = datetime.now().strftime("%d.%m.%Y %H:%M")
     
-    icerik = f"<h3>Yeni B2B Siparişi</h3><p><b>Bayi:</b> {bayi}</p><p><b>Tarih:</b> {tarih}</p><table border='1' cellpadding='5'><tr><th>Parça No</th><th>Ürün Adı</th><th>Adet</th></tr>"
+    tablo_html = ""
     for u_no, adet in sepet.items():
         urun = next((u for u in tum_urunler if str(u['urun_no']) == u_no), None)
-        if urun: icerik += f"<tr><td>{u_no}</td><td>{urun['urun_adi']}</td><td>{adet}</td></tr>"
-    icerik += "</table>"
+        if urun: tablo_html += f"<tr><td>{u_no}</td><td>{urun['urun_adi']}</td><td>{adet}</td></tr>"
 
+    # Mail Gönderimini en güvenli hale getirdik (Timeout eklendi)
     try:
-        # Mail işlemini try-except içine aldık ki mail gitmezse bile WhatsApp çalışsın
         msg = MIMEMultipart()
         msg['From'] = MAIL_ADRESI
         msg['To'] = ALICI_MAIL
         msg['Subject'] = f"SİPARİŞ GELDİ - {bayi}"
-        msg.attach(MIMEText(icerik, 'html'))
+        html_body = f"<html><body><h3>B2B Sipariş</h3><p>Bayi: {bayi}<br>Tarih: {tarih}</p><table border='1' cellpadding='5'>{tablo_html}</table></body></html>"
+        msg.attach(MIMEText(html_body, 'html'))
         
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(MAIL_ADRESI, MAIL_SIFRESI)
-        server.send_message(msg)
-        server.quit()
+        # timeout=10 sayesinde sistem kilitlenmez
+        with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
+            server.starttls()
+            server.login(MAIL_ADRESI, MAIL_SIFRESI)
+            server.send_message(msg)
     except Exception as e:
-        print(f"Mail hatası ama devam ediliyor: {e}")
+        print(f"Mail iletilemedi ama devam ediliyor: {e}")
 
-    session['sepet'] = {} # Mail gitse de gitmese de sepeti temizle ki 500 vermesin
+    session['sepet'] = {} 
     session.modified = True
-    return jsonify({"mesaj": "İşlem başarılı", "bayi": bayi})
+    return jsonify({"mesaj": "Sipariş işleme alındı", "bayi": bayi})
 
 @app.route('/sepet_sil/<urun_no>')
 def sepet_sil(urun_no):
