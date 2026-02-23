@@ -127,26 +127,26 @@ def siparis_tamamla():
         urun = next((u for u in tum_urunler if str(u['urun_no']) == u_no), None)
         if urun: tablo_html += f"<tr><td>{u_no}</td><td>{urun['urun_adi']}</td><td>{adet}</td></tr>"
 
-    # ÖNEMLİ: Mail gönderimi başarısız olsa bile JSON yanıtı dönerek JavaScript'i WhatsApp'a yönlendiriyoruz.
     try:
         msg = MIMEMultipart()
         msg['From'] = MAIL_ADRESI
         msg['To'] = ALICI_MAIL
         msg['Subject'] = f"OTO VOLKAN SİPARİŞ - {bayi}"
-        html_body = f"<html><body><h3>Yeni B2B Siparişi</h3><p>Bayi: {bayi}<br>Tarih: {tarih}</p><table border='1'>{tablo_html}</table></body></html>"
+        html_body = f"<html><body><h3>Yeni B2B Siparişi</h3><p>Bayi: {bayi}<br>Tarih: {tarih}</p><table border='1' cellpadding='5'>{tablo_html}</table></body></html>"
         msg.attach(MIMEText(html_body, 'html'))
         
-        # timeout=5 ile mail sunucusu cevap vermezse sistem beklemeyi bırakır.
+        # Render engellemesine karşı timeout (5 sn) ve hata yakalama
         with smtplib.SMTP('smtp.gmail.com', 587, timeout=5) as server:
             server.starttls()
             server.login(MAIL_ADRESI, MAIL_SIFRESI)
             server.send_message(msg)
-    except Exception as e:
-        print(f"Mail iletilemedi (Render Kısıtlaması olabilir): {e}")
+        mail_durum = True
+    except:
+        mail_durum = False
 
-    session['sepet'] = {} # Sepeti temizle
+    session['sepet'] = {} # Sepet temizlensin
     session.modified = True
-    return jsonify({"mesaj": "Sipariş işleme alındı", "bayi": bayi, "wp_no": SAYIN_USTA_TELEFON})
+    return jsonify({"mesaj": "Sipariş işleme alındı", "mail_gonderildi": mail_durum, "bayi": bayi})
 
 @app.route('/sepet_sil/<urun_no>')
 def sepet_sil(urun_no):
