@@ -6,8 +6,8 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-app = Flask(__name__)
-app.secret_key = "oTO959595-"
+app = Flask(otovolkan)
+app.secret_key = "Oto959595-"
 
 # --- AYARLAR: EMAIL VE WHATSAPP ---
 SAYIN_USTA_TELEFON = "905335033019"  # WhatsApp numaran
