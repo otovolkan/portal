@@ -8,7 +8,7 @@
     </style>
 </head>
 <body class="bg-light">
-<nav class="navbar navbar-dark bg-primary shadow-sm py-3"><div class="container d-flex justify-content-between align-items-center"><a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a><a href="/" class="btn btn-outline-light btn-sm fw-bold shadow-sm px-4">← GERİ DÖN</a></div></nav>
+<nav class="navbar navbar-dark bg-primary py-3"><div class="container d-flex justify-content-between align-items-center"><a class="navbar-brand fw-bold fs-3" href="/">OTO VOLKAN</a><a href="/" class="btn btn-outline-light fw-bold px-4">← KATALOĞA DÖN</a></div></nav>
 
 <div class="container mt-5">
     <div class="bg-white p-5 rounded-4 shadow border">
@@ -19,13 +19,13 @@
                 <thead class="table-dark"><tr><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>ADET</th><th>BİRİM FİYAT</th><th>ARA TOPLAM</th><th>İŞLEM</th></tr></thead>
                 <tbody>
                     {% for p in sepet %}
-                    <tr class="sepet-satir" data-no="{{ p.urun_no }}" data-ad="{{ p.urun_adi }}" data-adet="{{ p.adet }}">
+                    <tr class="sepet-satir" data-no="{{ p.urun_no }}" data-ad="{{ p.urun_adi }}" data-adet="{{ p.adet }}" data-birim="{{ p.birim_gosterim }}" data-toplam="{{ p.ara_toplam_gosterim }}">
                         <td class="fw-bold text-secondary">{{ p.urun_no }}</td>
                         <td class="text-start fw-bold text-dark small">{{ p.urun_adi }}</td>
                         <td><span class="badge bg-primary fs-5 px-3 shadow-sm">{{ p.adet }} Adet</span></td>
                         <td class="fw-bold text-muted small">{{ p.birim_gosterim }}</td>
                         <td class="fw-bold text-primary fs-5">{{ p.ara_toplam_gosterim }}</td>
-                        <td><a href="{{ url_for('sepet_sil', urun_no=p.urun_no) }}" class="btn btn-danger btn-md fw-bold shadow-sm px-4 rounded-pill">🗑️ KALDIR</a></td>
+                        <td><a href="{{ url_for('sepet_sil', urun_no=p.urun_no) }}" class="btn btn-danger btn-md fw-bold px-4 rounded-pill shadow-sm">🗑️ KALDIR</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -33,8 +33,8 @@
         </div>
         
         <div class="mt-5 toplam-kutu text-end">
-            <div class="mb-2 fw-bold text-dark fs-5">TL TOPLAMI: <span id="topTl" class="text-primary">{{ toplam_tl }}</span></div>
-            <div class="mb-4 fw-bold text-success fs-3">EURO TOPLAMI: <span id="topEur">{{ toplam_euro }}</span></div>
+            <div class="mb-2 fw-bold text-dark fs-5 text-uppercase">TL TOPLAMI: <span id="topTl" class="text-primary">{{ toplam_tl }}</span></div>
+            <div class="mb-4 fw-bold text-success fs-3 text-uppercase">EURO TOPLAMI: <span id="topEur">{{ toplam_euro }}</span></div>
             <button class="btn btn-success btn-xl fw-bold shadow-lg px-5 py-3 rounded-pill fs-3" onclick="siparisOnayla()">✅ SİPARİŞİ ONAYLA</button>
         </div>
         {% else %}
@@ -50,34 +50,30 @@
 function siparisOnayla() {
     if(!confirm("Siparişi merkeze iletmek istiyor musunuz?")) return;
     
+    // Mesaj içeriğini şimdiden toplayalım (Hata olsa bile WP açılması için)
+    let bayi = "{{ bayi_adi }}";
+    let telefon = "{{ wp_no }}";
+    let mesaj = "*OTO VOLKAN B2B SİPARİŞİ*\n*Bayi:* " + bayi + "\n\n";
+    
+    document.querySelectorAll('.sepet-satir').forEach((satir) => {
+        mesaj += "📦 *" + satir.dataset.ad + "* (" + satir.dataset.no + ") - " + satir.dataset.adet + " Adet\n";
+    });
+    
+    mesaj += "\n*TL TOPLAM:* " + document.getElementById('topTl').innerText;
+    mesaj += "\n*EURO TOPLAM:* " + document.getElementById('topEur').innerText;
+
+    // Sunucuya Email denemesi için git
     fetch('/siparis_tamamla', { method: 'POST' })
-    .then(response => {
-        // Eğer sunucu JSON yerine HTML dönerse hatayı burada yakalayalım
-        if (!response.ok) { throw new Error('Sunucu hatası! Lütfen mail ayarlarını kontrol edin.'); }
-        return response.json();
-    })
-    .then(data => {
-        // WhatsApp mesajını her durumda hazırla
-        let bayi = "{{ bayi_adi }}";
-        let telefon = "{{ wp_no }}";
-        let mesaj = "*OTO VOLKAN SİPARİŞ*\n*Bayi:* " + bayi + "\n\n";
-        
-        document.querySelectorAll('.sepet-satir').forEach((satir) => {
-            mesaj += "📦 *" + satir.dataset.ad + "* (" + satir.dataset.no + ") - " + satir.dataset.adet + " Adet\n";
-        });
-        
-        mesaj += "\n*TL TOPLAM:* " + document.getElementById('topTl').innerText;
-        mesaj += "\n*EURO TOPLAM:* " + document.getElementById('topEur').innerText;
-        
-        alert("Sipariş işleme alındı. WhatsApp'a yönlendiriliyorsunuz...");
+    .then(r => {
+        // Mail gitmese bile tarayıcı WhatsApp'ı açsın
+        alert("Sipariş talebi alındı. WhatsApp'a yönlendiriliyorsunuz...");
         window.open("https://wa.me/" + telefon + "?text=" + encodeURIComponent(mesaj), '_blank');
         window.location.href = "/";
     })
     .catch(err => {
-        alert("Hata oluştu ama WhatsApp ile devam edebilirsiniz: " + err.message);
-        // Hata olsa bile WP yönlendirmesini yedek olarak çalıştırıyoruz
-        let mesaj = "*YEDEK SİPARİŞ HATTI*\nBayi: {{ bayi_adi }}\n(Sistemde mail hatası oluştu, manuel iletiyorum)";
-        window.open("https://wa.me/{{ wp_no }}?text=" + encodeURIComponent(mesaj), '_blank');
+        // Tamamen bağlantı kopsa dahi WP yedek planı
+        window.open("https://wa.me/" + telefon + "?text=" + encodeURIComponent(mesaj), '_blank');
+        window.location.href = "/";
     });
 }
 </script>
