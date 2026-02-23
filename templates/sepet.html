@@ -19,7 +19,7 @@
                 <thead class="table-dark"><tr><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>ADET</th><th>BİRİM FİYAT</th><th>ARA TOPLAM</th><th>İŞLEM</th></tr></thead>
                 <tbody>
                     {% for p in sepet %}
-                    <tr class="sepet-satir" data-no="{{ p.urun_no }}" data-ad="{{ p.urun_adi }}" data-adet="{{ p.adet }}" data-birim="{{ p.birim_gosterim }}" data-toplam="{{ p.ara_toplam_gosterim }}">
+                    <tr class="sepet-satir" data-no="{{ p.urun_no }}" data-ad="{{ p.urun_adi }}" data-adet="{{ p.adet }}">
                         <td class="fw-bold text-secondary">{{ p.urun_no }}</td>
                         <td class="text-start fw-bold text-dark small">{{ p.urun_adi }}</td>
                         <td><span class="badge bg-primary fs-5 px-3 shadow-sm">{{ p.adet }} Adet</span></td>
@@ -37,7 +37,12 @@
             <div class="mb-4 fw-bold text-success fs-3">EURO TOPLAMI: <span id="topEur">{{ toplam_euro }}</span></div>
             <button class="btn btn-success btn-xl fw-bold shadow-lg px-5 py-3 rounded-pill fs-3" onclick="siparisOnayla()">✅ SİPARİŞİ ONAYLA</button>
         </div>
-        {% else %}<div class="text-center py-5"><h3>Sepetiniz boş.</h3><a href="/" class="btn btn-primary mt-3 px-5 py-3 fw-bold rounded-pill shadow fs-5">Hemen Ürün Sorgula</a></div>{% endif %}
+        {% else %}
+        <div class="text-center py-5">
+            <h3 class="text-muted mb-4">Sepetiniz şu an boş.</h3>
+            <a href="/" class="btn btn-primary mt-3 px-5 py-3 fw-bold rounded-pill shadow fs-5">Hemen Ürün Sorgula</a>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -45,15 +50,14 @@
 function siparisOnayla() {
     if(!confirm("Siparişi merkeze iletmek istiyor musunuz?")) return;
     
-    // Yükleniyor ikonu gösterilebilir veya buton deaktif edilebilir
-    const btn = document.querySelector('button[onclick="siparisOnayla()"]');
-    btn.disabled = true;
-    btn.innerText = "İşleniyor...";
-
     fetch('/siparis_tamamla', { method: 'POST' })
-    .then(r => r.json())
+    .then(response => {
+        // Eğer sunucu JSON yerine HTML dönerse hatayı burada yakalayalım
+        if (!response.ok) { throw new Error('Sunucu hatası! Lütfen mail ayarlarını kontrol edin.'); }
+        return response.json();
+    })
     .then(data => {
-        // WhatsApp mesajını hazırla
+        // WhatsApp mesajını her durumda hazırla
         let bayi = "{{ bayi_adi }}";
         let telefon = "{{ wp_no }}";
         let mesaj = "*OTO VOLKAN SİPARİŞ*\n*Bayi:* " + bayi + "\n\n";
@@ -65,13 +69,15 @@ function siparisOnayla() {
         mesaj += "\n*TL TOPLAM:* " + document.getElementById('topTl').innerText;
         mesaj += "\n*EURO TOPLAM:* " + document.getElementById('topEur').innerText;
         
-        alert("Sipariş alındı. WhatsApp'a yönlendiriliyorsunuz...");
+        alert("Sipariş işleme alındı. WhatsApp'a yönlendiriliyorsunuz...");
         window.open("https://wa.me/" + telefon + "?text=" + encodeURIComponent(mesaj), '_blank');
         window.location.href = "/";
     })
     .catch(err => {
-        alert("Bağlantı hatası ama WhatsApp ile devam edebilirsiniz.");
-        window.open("https://wa.me/{{ wp_no }}?text=Siparisim var!", '_blank');
+        alert("Hata oluştu ama WhatsApp ile devam edebilirsiniz: " + err.message);
+        // Hata olsa bile WP yönlendirmesini yedek olarak çalıştırıyoruz
+        let mesaj = "*YEDEK SİPARİŞ HATTI*\nBayi: {{ bayi_adi }}\n(Sistemde mail hatası oluştu, manuel iletiyorum)";
+        window.open("https://wa.me/{{ wp_no }}?text=" + encodeURIComponent(mesaj), '_blank');
     });
 }
 </script>
