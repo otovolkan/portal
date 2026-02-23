@@ -13,7 +13,7 @@ app.secret_key = "Oto959595-"
 # --- AYARLAR ---
 SAYIN_USTA_TELEFON = "905335033019"
 MAIL_ADRESI = "voxoraku@gmail.com"
-MAIL_SIFRESI = "gpml fttc uzzu zvaa"
+MAIL_SIFRESI = "vcbu yhil pxaa rrwq"
 ALICI_MAIL = "info@otovolkan.com"
 
 def format_fiyat(deger, para_birimi_kolonu="", marka=""):
