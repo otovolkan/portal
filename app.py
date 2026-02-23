@@ -127,7 +127,6 @@ def siparis_tamamla():
         if urun:
             tablo_html += f"<tr><td>{u_no}</td><td>{urun['urun_adi']}</td><td>{adet} Adet</td></tr>"
 
-    # EMAIL GÖNDERİMİ (Dosyaya yazma yok, dolayısıyla 500 hatası yok)
     try:
         msg = MIMEMultipart()
         msg['From'] = MAIL_ADRESI
@@ -139,10 +138,9 @@ def siparis_tamamla():
             server.starttls()
             server.login(MAIL_ADRESI, MAIL_SIFRESI)
             server.send_message(msg)
-    except:
-        pass
+    except: pass
 
-    session['sepet'] = {} # SİPARİŞ SONRASI SEPETİ TEMİZLE
+    session['sepet'] = {} # SEPETİ TEMİZLE
     session.modified = True
     return jsonify({"mesaj": "Siparişiniz merkeze başarıyla iletildi!", "bayi": bayi})
 
