@@ -3,18 +3,17 @@ import pandas as pd
 import os
 import re
 import smtplib
-from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 app.secret_key = "oTO959595-"
 
-# --- KURUMSAL AYARLAR ---
-SAYIN_USTA_TELEFON = "905335033019"  # WhatsApp numaranız (Örn: 905321234567)
-MAIL_ADRESI = "voxoraku@gmail.com"  # Gmail adresiniz
-MAIL_SIFRESI = "gpml fttc uzzu zvaa"  # Gmail'den aldığınız 16 haneli Uygulama Şifresi
-ALICI_MAIL = "info@otovolkan.com"   # Siparişlerin düşeceği e-posta adresi
+# --- AYARLAR: EMAIL VE WHATSAPP ---
+SAYIN_USTA_TELEFON = "905335033019"  # WhatsApp numaran
+MAIL_ADRESI = "voxoraku@gmail.com" # Gönderici mail
+MAIL_SIFRESI = "gpml fttc uzzu zvaa" # Uygulama şifresi
+ALICI_MAIL = "info@otovolkan.com" # Siparişin düşeceği mail
 
 def format_fiyat(deger, para_birimi_kolonu="", marka=""):
     if not deger: return "0,00 TL"
@@ -24,15 +23,13 @@ def format_fiyat(deger, para_birimi_kolonu="", marka=""):
         birim = "EURO" if pb_kolon in ["EURO", "EUR", "€"] else "TL"
     elif "EURO" in fiyat_str or "€" in fiyat_str or "BANNER" in str(marka).upper():
         birim = "EURO"
-    else: birim = "TL"
+    else:
+        birim = "TL"
     sayi_metin = re.sub(r'[^\d,.]', '', fiyat_str)
     try:
-        if ',' in sayi_metin and '.' in sayi_metin:
-            sayi = float(sayi_metin.replace('.', '').replace(',', '.'))
-        elif ',' in sayi_metin:
-            sayi = float(sayi_metin.replace(',', '.'))
-        else:
-            sayi = float(sayi_metin)
+        if ',' in sayi_metin and '.' in sayi_metin: sayi = float(sayi_metin.replace('.', '').replace(',', '.'))
+        elif ',' in sayi_metin: sayi = float(sayi_metin.replace(',', '.'))
+        else: sayi = float(sayi_metin)
         return f"{sayi:,.2f} {birim}".replace(',', 'X').replace('.', ',').replace('X', '.')
     except: return f"{deger} {birim}"
 
@@ -73,11 +70,27 @@ def ana_sayfa():
     for item in items:
         pb = item.get('para_birimi', '')
         item['fiyat_gosterim'] = format_fiyat(item.get('fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
+        if item.get('indirimli_fiyat'):
+            item['indirimli_gosterim'] = format_fiyat(item.get('indirimli_fiyat'), para_birimi_kolonu=pb, marka=item.get('marka'))
         item['resim_temiz'] = str(item.get('resim', '')).strip()
+
+    reklamlar = [u for u in items if str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
     markalar = sorted(list(set([str(u['marka']) for u in items if u['marka'] and not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')])))
-    urunler = [u for u in items if (arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()) and (not secili_marka or str(u['marka']) == secili_marka)]
-    sepet_sayisi = sum(session.get('sepet', {}).values()) if session.get('sepet') else 0
-    return render_template('index.html', urunler=urunler, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'])
+    
+    urunler = []
+    arama_yapildi = (arama != '' or secili_marka != '')
+    if arama_yapildi:
+        urunler = [u for u in items if not str(u.get('urun_no', '')).strip().upper().startswith('REKLAM')]
+        if arama:
+            urunler = [u for u in urunler if arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()]
+        if secili_marka:
+            urunler = [u for u in urunler if str(u['marka']) == secili_marka]
+            
+    sepet = session.get('sepet', {})
+    sepet_sayisi = sum(sepet.values()) if sepet else 0
+    return render_template('index.html', urunler=urunler, reklamlar=reklamlar, markalar=markalar, 
+                           sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], 
+                           secili_marka=secili_marka, arama_yapildi=arama_yapildi)
 
 @app.route('/sepete_ekle/<urun_no>')
 def sepete_ekle(urun_no):
@@ -95,8 +108,8 @@ def sepetim():
     tum_urunler = verileri_yukle('urunler')
     sepet_listesi = []
     t_tl, t_euro = 0, 0
-    for u_no, adet in sepet.items():
-        urun = next((u for u in tum_urunler if str(u['urun_no']) == u_no), None)
+    for urun_no, adet in sepet.items():
+        urun = next((u for u in tum_urunler if str(u['urun_no']) == urun_no), None)
         if urun:
             f_sayi = fiyat_sayiya_cevir(urun.get('fiyat'))
             ara_toplam = f_sayi * adet
@@ -104,45 +117,53 @@ def sepetim():
             is_euro = (pb in ["EURO", "EUR", "€"] or "EURO" in str(urun.get('fiyat')).upper())
             if is_euro: t_euro += ara_toplam
             else: t_tl += ara_toplam
+            
             u_copy = urun.copy()
             u_copy['adet'] = adet
             u_copy['birim_gosterim'] = format_fiyat(urun.get('fiyat'), para_birimi_kolonu=pb)
             u_copy['ara_toplam_gosterim'] = f"{ara_toplam:,.2f} {'EURO' if is_euro else 'TL'}".replace(',', 'X').replace('.', ',').replace('X', '.')
             sepet_listesi.append(u_copy)
-    return render_template('sepet.html', sepet=sepet_listesi, toplam_tl=f"{t_tl:,.2f} TL".replace(',', 'X').replace('.', ',').replace('X', '.'), toplam_euro=f"{t_euro:,.2f} EURO".replace(',', 'X').replace('.', ',').replace('X', '.'), bayi_adi=session['bayi_adi'], wp_no=SAYIN_USTA_TELEFON)
+            
+    return render_template('sepet.html', sepet=sepet_listesi, 
+                           toplam_tl=f"{t_tl:,.2f} TL".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                           toplam_euro=f"{t_euro:,.2f} EURO".replace(',', 'X').replace('.', ',').replace('X', '.'),
+                           bayi_adi=session['bayi_adi'], wp_no=SAYIN_USTA_TELEFON)
 
 @app.route('/siparis_tamamla', methods=['POST'])
 def siparis_tamamla():
     if not session.get('giris_yapildi'): return jsonify({"hata": "Giriş gerekli"}), 403
+    
     sepet = session.get('sepet', {})
     if not sepet: return jsonify({"hata": "Sepet boş"}), 400
     
-    tarih = datetime.now().strftime("%d.%m.%Y %H:%M")
-    bayi = session['bayi_adi']
+    bayi = session.get('bayi_adi', 'Bilinmeyen Bayi')
     tum_urunler = verileri_yukle('urunler')
     
-    tablo_html = ""
+    # Email İçeriği Hazırlama
+    icerik = f"<h3>Yeni Sipariş Geldi!</h3><p><b>Bayi:</b> {bayi}</p><table border='1' cellpadding='5'><tr><th>Ürün No</th><th>Ürün Adı</th><th>Adet</th></tr>"
     for u_no, adet in sepet.items():
         urun = next((u for u in tum_urunler if str(u['urun_no']) == u_no), None)
-        if urun:
-            tablo_html += f"<tr><td>{u_no}</td><td>{urun['urun_adi']}</td><td>{adet} Adet</td></tr>"
+        if urun: icerik += f"<tr><td>{u_no}</td><td>{urun['urun_adi']}</td><td>{adet}</td></tr>"
+    icerik += "</table>"
 
     try:
         msg = MIMEMultipart()
         msg['From'] = MAIL_ADRESI
         msg['To'] = ALICI_MAIL
-        msg['Subject'] = f"YENİ SİPARİŞ - {bayi}"
-        html_body = f"<html><body><h3>B2B Sipariş Formu</h3><p><b>Bayi:</b> {bayi}<br><b>Tarih:</b> {tarih}</p><table border='1' cellpadding='5' style='border-collapse:collapse;'><tr><th>Parça No</th><th>Ürün Adı</th><th>Adet</th></tr>{tablo_html}</table></body></html>"
-        msg.attach(MIMEText(html_body, 'html'))
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(MAIL_ADRESI, MAIL_SIFRESI)
-            server.send_message(msg)
-    except: pass
-
-    session['sepet'] = {} # SİPARİŞ SONRASI SEPETİ TEMİZLE
-    session.modified = True
-    return jsonify({"mesaj": "Siparişiniz merkeze başarıyla iletildi!", "bayi": bayi})
+        msg['Subject'] = f"OTO VOLKAN B2B SİPARİŞ - {bayi}"
+        msg.attach(MIMEText(icerik, 'html'))
+        
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(MAIL_ADRESI, MAIL_SIFRESI)
+        server.send_message(msg)
+        server.quit()
+        
+        session['sepet'] = {} # Sipariş sonrası sepeti boşalt
+        return jsonify({"mesaj": "Sipariş e-posta ile gönderildi!"})
+    except Exception as e:
+        print(f"Mail hatası: {e}")
+        return jsonify({"mesaj": "Sipariş alındı ancak mail gönderilemedi."})
 
 @app.route('/sepet_sil/<urun_no>')
 def sepet_sil(urun_no):
