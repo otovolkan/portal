@@ -140,7 +140,7 @@ def siparis_tamamla():
             server.send_message(msg)
     except: pass
 
-    session['sepet'] = {} # SEPETİ TEMİZLE
+    session['sepet'] = {} # SİPARİŞ SONRASI SEPETİ TEMİZLE
     session.modified = True
     return jsonify({"mesaj": "Siparişiniz merkeze başarıyla iletildi!", "bayi": bayi})
 
