@@ -119,8 +119,11 @@
                                 <div class="islem-grubu">
                                     <input type="number" id="qty_{{ p.urun_no }}" class="miktar-input" value="1" min="1">
                                     <div class="btn-group">
-                                        <button class="btn btn-primary btn-sm fw-bold" onclick="sepeteTopluGit('{{ p.urun_no }}', 1)">ADET</button>
-                                        {% if p.koli_ici > 1 %}<button class="btn btn-success btn-sm fw-bold" onclick="sepeteTopluGit('{{ p.urun_no }}', {{ p.koli_ici }})">KOLİ</button>{% endif %}
+                                        {% if p.koli_ici > 1 %}
+                                            <button class="btn btn-success btn-sm fw-bold px-3" onclick="sepeteTopluGit('{{ p.urun_no }}', {{ p.koli_ici }})">KOLİ EKLE</button>
+                                        {% else %}
+                                            <button class="btn btn-primary btn-sm fw-bold px-3" onclick="sepeteTopluGit('{{ p.urun_no }}', 1)">ADET EKLE</button>
+                                        {% endif %}
                                         <button class="btn btn-outline-dark btn-sm fw-bold" onclick="forceOpenImage('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">🔍</button>
                                     </div>
                                 </div>
