@@ -76,20 +76,16 @@ def format_fiyat_birimli(sayi, birim):
 
 # --- AKILLI KOLİ İÇİ BELİRLEME ---
 def koli_ici_belirle(item):
-    # 1. Excel'deki koli miktarını yazdığın sütunu tara
     for k, v in item.items():
         if "koli" in str(k).lower():
             try:
                 if v != "" and float(v) > 1: return int(float(v))
             except: pass
-
-    # 2. Eğer sütunda yoksa ismin sonundaki (24) gibi parantezlere bak
     urun_adi = str(item.get('urun_adi', ''))
     matches = re.findall(r'\((\d+)\)', urun_adi)
     if matches:
-        koli_miktari = int(matches[-1]) # En sondaki parantezi al (ML karışmasın)
+        koli_miktari = int(matches[-1])
         if koli_miktari > 1: return koli_miktari
-            
     return 1
 
 def verileri_yukle(sayfa_adi):
@@ -109,11 +105,9 @@ def github_guncelle():
             repo = git.Repo(repo_path)
             origin = repo.remotes.origin
             origin.pull()
-            
             wsgi_file = "/var/www/otovolkan_pythonanywhere_com_wsgi.py"
             if os.path.exists(wsgi_file):
                 os.utime(wsgi_file, None)
-                
             return 'Guncelleme Tamam!', 200
         except Exception as e:
             return f'Hata: {str(e)}', 500
@@ -150,10 +144,18 @@ def ana_sayfa():
     iskonto = session.get('iskonto', 0)
     guncel_kur = kur_oku()
     gecerli_urunler = []
+    reklam_listesi = [] # Reklamları vitrin için burada toplayacağız
+
     for item in items:
         u_no = str(item.get('urun_no', '')).upper()
-        # Reklam/Kampanya filtrelemesini isteğe göre açıp kapatabilirsin
-        # if "REKLAM" in u_no or "KAMPANYA" in u_no: continue
+        kategori_adi = str(item.get('KATEGORİ', '')).upper()
+        
+        # --- REKLAM AYIKLAMA FİLTRESİ ---
+        if "REKLAM" in kategori_adi or "REKLAM" in u_no:
+            item['resim_temiz'] = str(item.get('resim', '')).strip()
+            reklam_listesi.append(item)
+            continue # Reklamı ürün listesine ekleme, pas geç
+        # -------------------------------
         
         ham_fiyat = fiyat_sayiya_cevir(item.get('fiyat'))
         marka_adi = str(item.get('marka', '')).upper()
@@ -179,7 +181,8 @@ def ana_sayfa():
     secili_marka = request.args.get('marka', '')
     urunler = [u for u in gecerli_urunler if (arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()) and (not secili_marka or str(u['marka']) == secili_marka)]
     sepet_sayisi = sum(session.get(f"sepet_{session.get('bayi_id')}", {}).values())
-    return render_template('index.html', urunler=urunler, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], kur=guncel_kur, admin=session.get('admin_mi'), iskonto=iskonto)
+    
+    return render_template('index.html', urunler=urunler, reklamlar=reklam_listesi, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], kur=guncel_kur, admin=session.get('admin_mi'), iskonto=iskonto)
 
 @app.route('/sepetim')
 def sepetim():
