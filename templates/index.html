@@ -13,118 +13,152 @@
         .destek-hatti { color: #fff; font-weight: bold; text-decoration: none; font-size: 1.1rem; transition: 0.3s; }
         .destek-hatti:hover { color: #ffc107; }
         
-        /* REKLAM ALANI */
-        .reklam-kutu { height: 300px; overflow: hidden; border-radius: 12px; margin-bottom: 20px; background: #fff; border: 1px solid #dee2e6; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s; }
-        .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+        .reklam-kutu { height: 300px; overflow: hidden; border-radius: 12px; margin-bottom: 20px; background: #fff; border: 1px solid #dee2e6; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; padding: 10px; cursor: pointer; }
         
-        /* TABLO VE KONTEYNER */
-        .table-container { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; }
-        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .stok-var { color: #198754; font-weight: bold; font-size: 0.85rem; }
-        .stok-yok { color: #dc3545; font-weight: bold; font-size: 0.85rem; }
-        .koli-bilgi { font-size: 0.75rem; color: #6c757d; display: block; }
-        .kdv-notu { font-size: 0.65rem; color: #6c757d; font-weight: normal; display: block; margin-top: -3px; }
+        .table-container { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .table thead { background-color: #212529; color: white; border: none; }
+        .table th { font-weight: 600; text-transform: uppercase; font-size: 0.85rem; padding: 15px !important; border: none; }
+        .product-row { transition: 0.2s; border-bottom: 1px solid #eee; }
+        .product-row:hover { background-color: #f1f7ff; }
         
-        /* İŞLEM GRUBU */
-        .islem-grubu { display: flex; align-items: center; justify-content: center; min-width: 185px; }
-        .miktar-input { width: 55px; text-align: center; border: 2px solid #0d6efd; border-radius: 5px; font-weight: bold; margin-right: 5px; height: 38px; }
+        .koli-bilgi { font-size: 0.75rem; color: #6c757d; display: block; margin-top: 2px; }
+        .fiyat-vurgu { font-size: 1.15rem; color: #0d6efd; font-weight: 800; }
         
-        /* MODAL (RESİM BÜYÜTME) */
-        .modal-custom { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
-        .modal-content-custom { position: relative; background: #fff; margin: 3% auto; padding: 25px; width: 50%; border-radius: 15px; text-align: center; }
-        .close-btn { position: absolute; right: 20px; top: 15px; font-size: 35px; cursor: pointer; color: #333; font-weight: bold; }
+        .qty-input { width: 70px; text-align: center; font-weight: bold; border: 2px solid #dee2e6; }
+        .btn-ekle { font-weight: bold; padding: 8px 20px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        @media (min-width: 992px) { .col-lg-2-4 { width: 20% !important; flex: 0 0 20%; } }
-        @media (max-width: 767px) { .reklam-kutu { height: 160px; } .modal-content-custom { width: 92%; margin: 15% auto; } }
+        /* ÖZEL KOLİ SEÇİM KUTUSU STİLİ */
+        .koli-secim-kutusu { border: 2px solid #198754; font-weight: bold; color: #198754; }
+
+        @media (max-width: 767px) {
+            .navbar-brand { font-size: 1.2rem !important; }
+            .reklam-kutu { height: 160px; }
+            .table th { font-size: 0.7rem; padding: 10px !important; }
+            .fiyat-vurgu { font-size: 1rem; }
+        }
+
+        #imageModal { display: none; position: fixed; z-index: 9999; padding-top: 50px; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); }
+        .modal-content-img { margin: auto; display: block; max-width: 90%; max-height: 85vh; object-fit: contain; border-radius: 10px; }
+        #modalTitle { color: white; text-align: center; margin-bottom: 15px; font-weight: bold; }
+        .close-modal { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="imageModal" class="modal-custom" onclick="this.style.display='none'">
-    <div class="modal-content-custom" onclick="event.stopPropagation()">
-        <span class="close-btn" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
-        <h5 id="modalTitle" class="mb-3 fw-bold text-primary fs-4 text-uppercase"></h5><hr>
-        <img id="modalImg" src="" style="max-width:100%; max-height: 70vh; border-radius:10px; object-fit: contain;">
-    </div>
+<div id="imageModal">
+    <span class="close-modal" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
+    <h3 id="modalTitle"></h3>
+    <img class="modal-content-img" id="modalImg">
 </div>
 
 <nav class="navbar navbar-dark sticky-top py-3">
     <div class="container d-flex justify-content-between align-items-center">
         <div>
-            <a class="navbar-brand fw-bold fs-2 mb-0" href="/">OTO VOLKAN</a>
-            <span class="bayi-vurgu">Hoş Geldiniz: <b class="text-warning">{{ bayi_adi }}</b></span>
+            <a class="navbar-brand fw-bold fs-2" href="/">OTO VOLKAN</a>
+            <span class="bayi-vurgu">Hoş geldiniz: {{ bayi_adi }}</span>
         </div>
-        <div class="text-center d-none d-md-block"><a href="tel:05335033019" class="destek-hatti">📞 DESTEK: 0533 503 30 19</a></div>
         <div class="d-flex align-items-center">
-            <a href="/sepetim" class="btn btn-warning btn-lg me-3 shadow-sm fw-bold position-relative px-4 text-uppercase">
-                🛒 SEPET <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light">{{ sepet_sayisi }}</span>
+            <a href="/sepetim" class="btn btn-warning shadow-sm fw-bold px-4 position-relative">
+                🛒 SEPETİM
+                {% if sepet_sayisi > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light">
+                    {{ sepet_sayisi }}
+                </span>
+                {% endif %}
             </a>
-            <a href="/cikis" class="btn btn-outline-light fw-bold shadow-sm px-3 text-uppercase">ÇIKIŞ</a>
+            <a href="/cikis" class="btn btn-outline-light ms-3 btn-sm">ÇIKIŞ</a>
         </div>
     </div>
 </nav>
 
 <div class="container-fluid px-4 mt-4">
-    {% if admin == True %}
-    <div class="container mb-4">
-        <div class="bg-warning bg-opacity-25 p-4 rounded-4 border border-warning shadow-sm">
-            <form action="/kur_guncelle" method="POST" class="row g-3 align-items-center justify-content-center">
-                <div class="col-auto"><span class="fw-bold text-dark fs-5">💶 EURO KURU GÜNCELLE:</span></div>
-                <div class="col-auto"><input type="number" step="0.01" name="yeni_kur" class="form-control form-control-lg fw-bold border-dark text-primary" style="width: 150px;" value="{{ kur }}"></div>
-                <div class="col-auto"><button type="submit" class="btn btn-dark btn-lg fw-bold px-5 shadow">KAYDET</button></div>
-            </form>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if not request.args.get('search') and not request.args.get('marka') %}
+    {% if not request.args.get('search') %}
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-4 col-lg-2-4"><div class="reklam-kutu"><img src="/static/images/KAMPANYA1.PNG" onerror="smartTry(this, 'KAMPANYA1.PNG')"></div></div>
-        <div class="col-6 col-md-4 col-lg-2-4"><div class="reklam-kutu"><img src="/static/images/KAMPANYA2.PNG" onerror="smartTry(this, 'KAMPANYA2.PNG')"></div></div>
-        <div class="col-6 col-md-4 col-lg-2-4"><div class="reklam-kutu"><img src="/static/images/KAMPANYA3.PNG" onerror="smartTry(this, 'KAMPANYA3.PNG')"></div></div>
-        <div class="col-6 col-md-4 col-lg-2-4"><div class="reklam-kutu"><img src="/static/images/KAMPANYA4.PNG" onerror="smartTry(this, 'KAMPANYA4.PNG')"></div></div>
-        <div class="col-6 col-md-4 col-lg-2-4"><div class="reklam-kutu"><img src="/static/images/KAMPANYA5.PNG" onerror="smartTry(this, 'KAMPANYA5.PNG')"></div></div>
+        {% for reklam in reklamlar %}
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="reklam-kutu">
+                <img src="/static/images/{{ reklam.resim_temiz }}" 
+                     onclick="openModal(this.src, 'GÜNCEL KAMPANYA')"
+                     onerror="this.src='https://via.placeholder.com/400x300?text=Kampanya'">
+            </div>
+        </div>
+        {% endfor %}
     </div>
     {% endif %}
 
     <div class="container">
         <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary border-2">
-            <form action="/" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-5 col-12"><label class="form-label fw-bold text-primary small">Ürün Arama</label><input type="text" name="search" class="form-control form-control-lg border-2" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus></div>
-                <div class="col-md-4 col-7"><label class="form-label fw-bold text-primary small">Marka</label><select name="marka" class="form-select form-select-lg border-2">
-                    <option value="">Tüm Markalar</option>
-                    {% for m in markalar %}<option value="{{ m }}" {% if request.args.get('marka') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
-                </select></div>
-                <div class="col-md-3 col-5"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">SORGULA</button></div>
+            <form action="/" method="GET" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-muted small">Ürün veya Parça No Ara</label>
+                    <input type="text" name="search" class="form-control form-control-lg shadow-sm" placeholder="Örn: 12V 60AH veya VOX-..." value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-muted small">Marka Seçimi</label>
+                    <select name="marka" class="form-select form-select-lg shadow-sm">
+                        <option value="">Tüm Markalar</option>
+                        {% for marka in markalar %}
+                        <option value="{{ marka }}" {% if request.args.get('marka') == marka %}selected{% endif %}>{{ marka }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-lg w-100 shadow fw-bold">SORGULA</button>
+                </div>
             </form>
         </div>
 
-        {% if urunler %}
         <div class="table-container shadow-sm">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 text-center" style="min-width: 700px;">
-                    <thead class="table-dark">
-                        <tr><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>STOK</th><th>MARKA</th><th>NET FİYAT<br><small style="font-size: 0.6rem; color: #ffc107;">K.D.V. DAHİL</small></th><th>İŞLEM</th></tr>
+                <table class="table align-middle text-center mb-0">
+                    <thead>
+                        <tr>
+                            <th>RESİM</th>
+                            <th>PARÇA NO</th>
+                            <th class="text-start">ÜRÜN ADI / KATEGORİ</th>
+                            <th>MARKA</th>
+                            <th>NET FİYAT</th>
+                            <th>SİPARİŞ (KOLİ)</th>
+                        </tr>
                     </thead>
                     <tbody>
-                        {% for p in urunler %}
-                        <tr>
-                            <td class="fw-bold text-primary">{{ p.urun_no }}</td>
-                            <td class="text-start fw-bold text-dark small">{{ p.urun_adi }}{% if p.koli_ici > 1 %}<span class="koli-bilgi">📦 Koli: {{ p.koli_ici }} Adet</span>{% endif %}</td>
-                            <td>{% if p.stok_durumu > 0 %}<span class="stok-var">● Stokta</span>{% else %}<span class="stok-yok">○ Tükendi</span>{% endif %}</td>
-                            <td><span class="badge bg-secondary text-uppercase">{{ p.marka }}</span></td>
-                            <td class="fw-bold text-primary fs-5">{{ p.fiyat_gosterim }}<span class="kdv-notu">K.D.V. Dahil</span></td>
-                            <td>
-                                {% if p.stok_durumu > 0 %}
-                                <div class="islem-grubu">
-                                    <input type="number" id="qty_{{ p.urun_no }}" class="miktar-input" value="1" min="1">
-                                    <div class="btn-group">
-                                        <button class="btn btn-primary btn-sm fw-bold" onclick="sepeteTopluGit('{{ p.urun_no }}', 1)">ADET</button>
-                                        {% if p.koli_ici > 1 %}<button class="btn btn-success btn-sm fw-bold" onclick="sepeteTopluGit('{{ p.urun_no }}', {{ p.koli_ici }})">KOLİ</button>{% endif %}
-                                        <button class="btn btn-outline-dark btn-sm fw-bold" onclick="forceOpenImage('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">🔍</button>
-                                    </div>
+                        {% for urun in urunler %}
+                        <tr class="product-row">
+                            <td style="width: 80px;">
+                                <img id="img_{{ urun.urun_no }}" class="img-thumbnail cursor-pointer" style="height: 60px; width: 60px; object-fit: contain; cursor:pointer;" 
+                                     onclick="forceOpenImage('{{ urun.resim_temiz }}', '{{ urun.urun_adi }}')"
+                                     onload="this.style.display='block'">
+                                <script>smartTry(document.getElementById('img_{{ urun.urun_no }}'), '{{ urun.resim_temiz }}');</script>
+                            </td>
+                            <td class="fw-bold text-dark">{{ urun.urun_no }}</td>
+                            <td class="text-start">
+                                <span class="fw-bold d-block text-uppercase" style="font-size: 0.95rem;">{{ urun.urun_adi }}</span>
+                                <span class="badge bg-light text-dark border">{{ urun.KATEGORİ }}</span>
+                                {% if urun.koli_ici > 1 %}
+                                <span class="koli-bilgi fw-bold text-success">📦 KOLİ İÇİ: {{ urun.koli_ici }} ADET</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-secondary px-3 py-2">{{ urun.marka }}</span></td>
+                            <td><span class="fiyat-vurgu">{{ urun.fiyat_gosterim }}</span></td>
+                            <td style="width: 180px;">
+                                {% if urun.stok_durumu > 0 %}
+                                <div class="d-flex flex-column gap-2 px-2">
+                                    <select class="form-select form-select-sm koli-secim-kutusu" id="qty_{{ urun.urun_no }}">
+                                        {% if urun.koli_ici > 1 %}
+                                            {% for k in range(1, 11) %}
+                                            <option value="{{ urun.koli_ici * k }}">{{ k }} Koli ({{ urun.koli_ici * k }} Adet)</option>
+                                            {% endfor %}
+                                        {% else %}
+                                            <option value="1">1 Adet</option>
+                                            {% for a in range(5, 55, 5) %}<option value="{{ a }}">{{ a }} Adet</option>{% endfor %}
+                                        {% endif %}
+                                    </select>
+                                    <button class="btn btn-success btn-sm btn-ekle shadow-sm" onclick="sepeteHizliGit('{{ urun.urun_no }}')">EKLE</button>
                                 </div>
-                                {% else %}<button class="btn btn-secondary btn-sm disabled w-100">PASİF</button>{% endif %}
+                                {% else %}
+                                <span class="badge bg-danger p-2 px-3">STOKTA YOK</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -132,30 +166,28 @@
                 </table>
             </div>
         </div>
-        {% endif %}
     </div>
 </div>
 
 <script>
-function sepeteTopluGit(uNo, carpan) { 
-    let input = document.getElementById('qty_' + uNo); 
-    let val = parseInt(input.value); 
-    if (val > 0) window.location.href = '/sepete_ekle/' + uNo + '?miktar=' + (val * carpan); 
+function sepeteHizliGit(uNo) {
+    let q = document.getElementById('qty_' + uNo).value;
+    window.location.href = '/sepete_ekle/' + uNo + '?miktar=' + q;
 }
 
-function openModal(imgSrc, title) { 
-    document.getElementById('modalImg').src = imgSrc; 
-    document.getElementById('modalTitle').innerText = title; 
-    document.getElementById('imageModal').style.display = 'block'; 
+function openModal(imgSrc, title) {
+    document.getElementById('modalImg').src = imgSrc;
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('imageModal').style.display = 'block';
 }
 
-function smartTry(imgTag, name) { 
-    let alt = name.includes('.PNG') ? name.replace('.PNG', '.png') : name.replace('.png', '.PNG'); 
-    imgTag.onerror = () => { 
-        imgTag.src = '/static/images/' + alt; 
-        imgTag.onerror = () => { imgTag.src = 'https://via.placeholder.com/400x400?text=Resim+Yok'; }; 
-    }; 
-    imgTag.src = '/static/images/' + name; 
+function smartTry(imgTag, name) {
+    let alt = name.includes('.PNG') ? name.replace('.PNG', '.png') : name.replace('.png', '.PNG');
+    imgTag.onerror = () => {
+        imgTag.src = '/static/images/' + alt;
+        imgTag.onerror = () => { imgTag.src = 'https://via.placeholder.com/400x400?text=Resim+Yok'; };
+    };
+    imgTag.src = '/static/images/' + name;
 }
 
 function forceOpenImage(name, title) {
@@ -164,15 +196,7 @@ function forceOpenImage(name, title) {
         let base = name.split('.')[0];
         variations.push(base + ".png", base + ".PNG", base + ".jpg", base + ".JPG");
     }
-    let i = 0;
-    function attempt() {
-        let img = new Image();
-        let src = '/static/images/' + variations[i];
-        img.onload = () => openModal(src, title);
-        img.onerror = () => { i++; if(i < variations.length) attempt(); else alert("Görsel bulunamadı!"); };
-        img.src = src;
-    }
-    attempt();
+    openModal('/static/images/' + name, title);
 }
 </script>
 </body>
