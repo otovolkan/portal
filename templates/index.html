@@ -10,20 +10,34 @@
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
         .navbar { background-color: #0d6efd !important; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .bayi-vurgu { font-size: 0.8rem; color: #fff; opacity: 0.9; display: block; }
+        .destek-hatti { color: #fff; font-weight: bold; text-decoration: none; font-size: 1.1rem; transition: 0.3s; }
+        .destek-hatti:hover { color: #ffc107; }
+        
+        /* REKLAM ALANI */
         .reklam-kutu { height: 300px; overflow: hidden; border-radius: 12px; margin-bottom: 20px; background: #fff; border: 1px solid #dee2e6; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
-        .table-container { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; padding: 10px; cursor: pointer; }
+        
+        /* TABLO VE KONTEYNER */
+        .table-container { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; }
         .stok-var { color: #198754; font-weight: bold; font-size: 0.85rem; }
         .stok-yok { color: #dc3545; font-weight: bold; font-size: 0.85rem; }
         .koli-bilgi { font-size: 0.75rem; color: #6c757d; display: block; }
         .kdv-notu { font-size: 0.65rem; color: #6c757d; display: block; }
+
+        /* FİYAT ALANI */
         .fiyat-liste { text-decoration: line-through; color: #6c757d; font-size: 0.8rem; opacity: 0.7; }
-        .fiyat-indirimli { color: #dc3545; font-weight: 800; font-size: 1.2rem; }
+        .fiyat-indirimli { color: #dc3545; font-weight: 800; font-size: 1.1rem; }
+        
+        /* İŞLEM GRUBU */
         .islem-grubu { display: flex; align-items: center; justify-content: center; min-width: 185px; }
         .miktar-input { width: 55px; text-align: center; border: 2px solid #0d6efd; border-radius: 5px; font-weight: bold; margin-right: 5px; height: 38px; }
+        
+        /* MODAL (RESİM BÜYÜTME) */
         .modal-custom { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
         .modal-content-custom { position: relative; background: #fff; margin: 3% auto; padding: 25px; width: 50%; border-radius: 15px; text-align: center; }
         .close-btn { position: absolute; right: 20px; top: 15px; font-size: 35px; cursor: pointer; color: #333; font-weight: bold; }
+
+        @media (min-width: 992px) { .col-lg-2-4 { width: 20% !important; flex: 0 0 20%; } }
         @media (max-width: 767px) { .reklam-kutu { height: 160px; } .modal-content-custom { width: 92%; margin: 15% auto; } }
     </style>
 </head>
@@ -32,59 +46,106 @@
 <div id="imageModal" class="modal-custom" onclick="this.style.display='none'">
     <div class="modal-content-custom" onclick="event.stopPropagation()">
         <span class="close-btn" onclick="document.getElementById('imageModal').style.display='none'">&times;</span>
-        <h5 id="modalTitle" class="mb-3 fw-bold text-primary text-uppercase"></h5><hr>
+        <h5 id="modalTitle" class="mb-3 fw-bold text-primary fs-4 text-uppercase"></h5><hr>
         <img id="modalImg" src="" style="max-width:100%; max-height: 70vh; border-radius:10px; object-fit: contain;">
     </div>
 </div>
 
 <nav class="navbar navbar-dark sticky-top py-3">
     <div class="container d-flex justify-content-between align-items-center">
-        <div><a class="navbar-brand fw-bold fs-2" href="/">OTO VOLKAN</a><br><span class="bayi-vurgu">Bayi: <b class="text-warning">{{ bayi_adi }}</b></span></div>
+        <div>
+            <a class="navbar-brand fw-bold fs-2 mb-0" href="/">OTO VOLKAN</a>
+            <span class="bayi-vurgu">Hoş Geldiniz: <b class="text-warning">{{ bayi_adi }}</b></span>
+        </div>
+        <div class="text-center d-none d-md-block"><a href="tel:05335033019" class="destek-hatti">📞 DESTEK: 0533 503 30 19</a></div>
         <div class="d-flex align-items-center">
-            <a href="/sepetim" class="btn btn-warning btn-lg me-3 shadow-sm fw-bold">🛒 SEPETİM ({{ sepet_sayisi }})</a>
-            <a href="/cikis" class="btn btn-outline-light btn-sm fw-bold">ÇIKIŞ</a>
+            <a href="/sepetim" class="btn btn-warning btn-lg me-3 shadow-sm fw-bold position-relative px-4 text-uppercase">
+                🛒 SEPET <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light">{{ sepet_sayisi }}</span>
+            </a>
+            <a href="/cikis" class="btn btn-outline-light fw-bold shadow-sm px-3 text-uppercase">ÇIKIŞ</a>
         </div>
     </div>
 </nav>
 
 <div class="container-fluid px-4 mt-4">
+    {% if admin == True %}
+    <div class="container mb-4 text-center">
+        <div class="bg-warning bg-opacity-25 p-4 rounded-4 border border-warning shadow-sm">
+            <form action="/kur_guncelle" method="POST" class="row g-3 align-items-center justify-content-center">
+                <div class="col-auto"><span class="fw-bold text-dark fs-5">💶 EURO KURU GÜNCELLE:</span></div>
+                <div class="col-auto"><input type="number" step="0.01" name="yeni_kur" class="form-control form-control-lg fw-bold border-dark text-primary" style="width: 150px;" value="{{ kur }}"></div>
+                <div class="col-auto"><button type="submit" class="btn btn-dark btn-lg fw-bold px-5 shadow">KAYDET</button></div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
     {% if not request.args.get('search') and not request.args.get('marka') %}
     <div class="row g-3 mb-4">
         {% for reklam in reklamlar %}
-        <div class="col-6 col-md-4 col-lg-2"><div class="reklam-kutu"><img src="/static/images/{{ reklam.resim_temiz }}" onerror="smartTry(this, '{{ reklam.resim_temiz }}')"></div></div>
+        <div class="col-6 col-md-4 col-lg-2-4">
+            <div class="reklam-kutu">
+                <img src="/static/images/{{ reklam.resim_temiz }}" 
+                     onclick="openModal(this.src, 'GÜNCEL KAMPANYA')"
+                     onerror="smartTry(this, '{{ reklam.resim_temiz }}')">
+            </div>
+        </div>
         {% endfor %}
     </div>
     {% endif %}
 
     <div class="container">
         <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary border-2">
-            <form action="/" method="GET" class="row g-3">
-                <div class="col-md-6"><input type="text" name="search" class="form-control" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}"></div>
-                <div class="col-md-4"><select name="marka" class="form-select">
-                    <option value="">Tüm Markalar</option>
-                    {% for m in markalar %}<option value="{{ m }}" {% if request.args.get('marka') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
-                </select></div>
-                <div class="col-md-2"><button type="submit" class="btn btn-primary w-100 fw-bold">SORGULA</button></div>
+            <form action="/" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-5 col-12">
+                    <label class="form-label fw-bold text-primary small">Ürün Arama</label>
+                    <input type="text" name="search" class="form-control form-control-lg border-2" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus>
+                </div>
+                <div class="col-md-4 col-7">
+                    <label class="form-label fw-bold text-primary small">Marka</label>
+                    <select name="marka" class="form-select form-select-lg border-2">
+                        <option value="">Tüm Markalar</option>
+                        {% for m in markalar %}<option value="{{ m }}" {% if request.args.get('marka') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 col-5"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">SORGULA</button></div>
             </form>
         </div>
 
         <div class="table-container shadow-sm">
             <div class="table-responsive">
-                <table class="table align-middle text-center mb-0">
+                <table class="table table-hover align-middle mb-0 text-center" style="min-width: 700px;">
                     <thead class="table-dark">
-                        <tr><th>PARÇA NO</th><th class="text-start">ÜRÜN ADI</th><th>STOK</th><th>MARKA</th><th>NET FİYAT</th><th>İŞLEM</th></tr>
+                        <tr>
+                            <th>RESİM</th>
+                            <th>PARÇA NO</th>
+                            <th class="text-start">ÜRÜN ADI</th>
+                            <th>STOK</th>
+                            <th>MARKA</th>
+                            <th>NET FİYAT</th>
+                            <th>İŞLEM</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {% for p in urunler %}
                         <tr>
+                            <td style="width: 80px;">
+                                <img id="img_{{ p.urun_no }}" class="img-thumbnail" style="height: 60px; width: 60px; object-fit: contain; cursor:pointer;" 
+                                     onclick="forceOpenImage('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">
+                                <script>smartTry(document.getElementById('img_{{ p.urun_no }}'), '{{ p.resim_temiz }}');</script>
+                            </td>
                             <td class="fw-bold text-primary">{{ p.urun_no }}</td>
-                            <td class="text-start fw-bold small">{{ p.urun_adi }}{% if p.koli_ici > 1 %}<span class="koli-bilgi">📦 Koli: {{ p.koli_ici }} Adet</span>{% endif %}</td>
+                            <td class="text-start fw-bold text-dark small">
+                                {{ p.urun_adi }}
+                                {% if p.koli_ici > 1 %}<span class="koli-bilgi">📦 Koli: {{ p.koli_ici }} Adet</span>{% endif %}
+                            </td>
                             <td>{% if p.stok_durumu > 0 %}<span class="stok-var">● Stokta</span>{% else %}<span class="stok-yok">○ Tükendi</span>{% endif %}</td>
                             <td><span class="badge bg-secondary text-uppercase">{{ p.marka }}</span></td>
                             <td>
-                                {% if p.iskonto_var_mi %}
+                                {% if p.ozel_kampanya_var_mi %}
                                     <div class="fiyat-liste">{{ p.liste_fiyat_gosterim }}</div>
                                     <div class="fiyat-indirimli">{{ p.fiyat_gosterim }}</div>
+                                    <span class="badge bg-danger" style="font-size: 0.6rem;">KAMPANYALI FİYAT</span>
                                 {% else %}
                                     <div class="fw-bold text-primary fs-5">{{ p.fiyat_gosterim }}</div>
                                 {% endif %}
