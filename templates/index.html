@@ -14,19 +14,16 @@
         .destek-hatti:hover { color: #ffc107; }
         
         /* REKLAM ALANI */
-        .reklam-kutu { height: 300px; overflow: hidden; border-radius: 12px; margin-bottom: 20px; background: #fff; border: 1px solid #dee2e6; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; padding: 10px; cursor: pointer; }
+        .reklam-kutu { height: 300px; overflow: hidden; border-radius: 12px; margin-bottom: 20px; background: #fff; border: 1px solid #dee2e6; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s; }
+        .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
         
         /* TABLO VE KONTEYNER */
         .table-container { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; }
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .stok-var { color: #198754; font-weight: bold; font-size: 0.85rem; }
         .stok-yok { color: #dc3545; font-weight: bold; font-size: 0.85rem; }
         .koli-bilgi { font-size: 0.75rem; color: #6c757d; display: block; }
-        .kdv-notu { font-size: 0.65rem; color: #6c757d; display: block; }
-
-        /* FİYAT ALANI */
-        .fiyat-liste { text-decoration: line-through; color: #6c757d; font-size: 0.8rem; opacity: 0.7; }
-        .fiyat-indirimli { color: #dc3545; font-weight: 800; font-size: 1.1rem; }
+        .kdv-notu { font-size: 0.65rem; color: #6c757d; font-weight: normal; display: block; margin-top: -3px; }
         
         /* İŞLEM GRUBU */
         .islem-grubu { display: flex; align-items: center; justify-content: center; min-width: 185px; }
@@ -69,7 +66,7 @@
 
 <div class="container-fluid px-4 mt-4">
     {% if admin == True %}
-    <div class="container mb-4 text-center">
+    <div class="container mb-4">
         <div class="bg-warning bg-opacity-25 p-4 rounded-4 border border-warning shadow-sm">
             <form action="/kur_guncelle" method="POST" class="row g-3 align-items-center justify-content-center">
                 <div class="col-auto"><span class="fw-bold text-dark fs-5">💶 EURO KURU GÜNCELLE:</span></div>
@@ -82,58 +79,44 @@
 
     {% if not request.args.get('search') and not request.args.get('marka') %}
     <div class="row g-3 mb-4">
-        {% for reklam in reklamlar %}
-        <div class="col-6 col-md-4 col-lg-2-4">
-            <div class="reklam-kutu">
-                <img src="/static/images/{{ reklam.resim_temiz }}" 
-                     onclick="openModal(this.src, 'GÜNCEL KAMPANYA')"
-                     onerror="smartTry(this, '{{ reklam.resim_temiz }}')">
-            </div>
-        </div>
-        {% endfor %}
+        <div class="col-6 col-md-4 col-lg-2-4"><div class="reklam-kutu"><img src="/static/images/KAMPANYA1.PNG" onerror="smartTry(this, 'KAMPANYA1.PNG')"></div></div>
+        <div class="col-6 col-md-4 col-lg-2-4"><div class="reklam-kutu"><img src="/static/images/KAMPANYA2.PNG" onerror="smartTry(this, 'KAMPANYA2.PNG')"></div></div>
+        <div class="col-6 col-md-4 col-lg-2-4"><div class="reklam-kutu"><img src="/static/images/KAMPANYA3.PNG" onerror="smartTry(this, 'KAMPANYA3.PNG')"></div></div>
+        <div class="col-6 col-md-4 col-lg-2-4"><div class="reklam-kutu"><img src="/static/images/KAMPANYA4.PNG" onerror="smartTry(this, 'KAMPANYA4.PNG')"></div></div>
+        <div class="col-6 col-md-4 col-lg-2-4"><div class="reklam-kutu"><img src="/static/images/KAMPANYA5.PNG" onerror="smartTry(this, 'KAMPANYA5.PNG')"></div></div>
     </div>
     {% endif %}
 
     <div class="container">
         <div class="bg-white p-4 rounded-4 shadow-sm mb-4 border border-primary border-2">
             <form action="/" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-5 col-12">
-                    <label class="form-label fw-bold text-primary small">Ürün Arama</label>
-                    <input type="text" name="search" class="form-control form-control-lg border-2" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus>
-                </div>
-                <div class="col-md-4 col-7">
-                    <label class="form-label fw-bold text-primary small">Marka</label>
-                    <select name="marka" class="form-select form-select-lg border-2">
-                        <option value="">Tüm Markalar</option>
-                        {% for m in markalar %}<option value="{{ m }}" {% if request.args.get('marka') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
-                    </select>
-                </div>
+                <div class="col-md-5 col-12"><label class="form-label fw-bold text-primary small">Ürün Arama</label><input type="text" name="search" class="form-control form-control-lg border-2" placeholder="Parça No veya Ürün Adı..." value="{{ request.args.get('search', '') }}" autofocus></div>
+                <div class="col-md-4 col-7"><label class="form-label fw-bold text-primary small">Marka</label><select name="marka" class="form-select form-select-lg border-2">
+                    <option value="">Tüm Markalar</option>
+                    {% for m in markalar %}<option value="{{ m }}" {% if request.args.get('marka') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+                </select></div>
                 <div class="col-md-3 col-5"><button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">SORGULA</button></div>
             </form>
         </div>
 
+        {% if urunler %}
         <div class="table-container shadow-sm">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 text-center" style="min-width: 700px;">
+                <table class="table table-hover align-middle mb-0 text-center" style="min-width: 900px;">
                     <thead class="table-dark">
                         <tr>
-                            <th>RESİM</th>
                             <th>PARÇA NO</th>
                             <th class="text-start">ÜRÜN ADI</th>
                             <th>STOK</th>
                             <th>MARKA</th>
-                            <th>NET FİYAT</th>
+                            <th>BAYİ FİYATI</th>
+                            <th>KAMPANYALI FİYAT</th>
                             <th>İŞLEM</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for p in urunler %}
                         <tr>
-                            <td style="width: 80px;">
-                                <img id="img_{{ p.urun_no }}" class="img-thumbnail" style="height: 60px; width: 60px; object-fit: contain; cursor:pointer;" 
-                                     onclick="forceOpenImage('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">
-                                <script>smartTry(document.getElementById('img_{{ p.urun_no }}'), '{{ p.resim_temiz }}');</script>
-                            </td>
                             <td class="fw-bold text-primary">{{ p.urun_no }}</td>
                             <td class="text-start fw-bold text-dark small">
                                 {{ p.urun_adi }}
@@ -141,16 +124,21 @@
                             </td>
                             <td>{% if p.stok_durumu > 0 %}<span class="stok-var">● Stokta</span>{% else %}<span class="stok-yok">○ Tükendi</span>{% endif %}</td>
                             <td><span class="badge bg-secondary text-uppercase">{{ p.marka }}</span></td>
-                            <td>
-                                {% if p.ozel_kampanya_var_mi %}
-                                    <div class="fiyat-liste">{{ p.liste_fiyat_gosterim }}</div>
-                                    <div class="fiyat-indirimli">{{ p.fiyat_gosterim }}</div>
-                                    <span class="badge bg-danger" style="font-size: 0.6rem;">KAMPANYALI FİYAT</span>
-                                {% else %}
-                                    <div class="fw-bold text-primary fs-5">{{ p.fiyat_gosterim }}</div>
-                                {% endif %}
+                            
+                            <td class="fw-bold text-primary fs-6">
+                                {{ p.liste_fiyat_gosterim }}
                                 <span class="kdv-notu">K.D.V. Dahil</span>
                             </td>
+
+                            <td>
+                                {% if p.ozel_kampanya_var_mi %}
+                                    <div class="fw-bold text-danger fs-5">{{ p.fiyat_gosterim }}</div>
+                                    <span class="badge bg-danger" style="font-size: 0.6rem;">KAMPANYALI</span>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+
                             <td>
                                 {% if p.stok_durumu > 0 %}
                                 <div class="islem-grubu">
@@ -172,6 +160,7 @@
                 </table>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 
