@@ -38,26 +38,8 @@ def kur_oku():
     try:
         with open(KUR_DOSYASI, 'r') as f:
             val = f.read().strip()
-            # 4 basamaklı hassasiyete uygun okuma
             return float(val) if val else 36.5000
     except: return 36.5000
-
-def siparis_mail_at(bayi_adi, icerik):
-    ALICILAR = ["info@otovolkan.com", "info@otovolkan.net"]
-    GONDERICI = "voxoraku@gmail.com"
-    SIFRE = "kjtu oxfh ojzl rsrk"
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = GONDERICI
-        msg['To'] = ", ".join(ALICILAR)
-        msg['Subject'] = f"B2B Siparis: {bayi_adi}"
-        msg.attach(MIMEText(icerik, 'plain', 'utf-8'))
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=10) as server:
-            server.login(GONDERICI, SIFRE)
-            server.sendmail(GONDERICI, ALICILAR, msg.as_string())
-        return True
-    except: return False
 
 def fiyat_sayiya_cevir(deger):
     if not deger or pd.isna(deger): return 0.0
@@ -89,23 +71,13 @@ def verileri_yukle(sayfa_adi):
         return df.fillna('').to_dict(orient='records')
     except: return []
 
-@app.route('/github_guncelle', methods=['POST'])
-def github_guncelle():
-    try:
-        repo = git.Repo("/home/otovolkan/portal")
-        repo.remotes.origin.pull()
-        wsgi_file = "/var/www/otovolkan_pythonanywhere_com_wsgi.py"
-        if os.path.exists(wsgi_file): os.utime(wsgi_file, None)
-        return 'Sistem Guncellendi!', 200
-    except Exception as e: return str(e), 500
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         girilen_kod = str(request.form.get('bayi_kodu', '')).strip().lower()
         if girilen_kod == "admin95":
             session.clear()
-            session.update({'giris_yapildi': True, 'bayi_adi': 'YÖNETİCİ', 'bayi_id': 'admin', 'admin_mi': True, 'iskonto': 0})
+            session.update({'giris_yapildi': True, 'bayi_adi': 'YÖNETİCİ', 'bayi_id': 'admin', 'admin_mi': True})
             return redirect(url_for('ana_sayfa'))
         bayiler = verileri_yukle('bayiler')
         bayi = next((b for b in bayiler if str(b.get('bayi_kodu','')).strip().lower() == girilen_kod), None)
@@ -135,14 +107,23 @@ def ana_sayfa():
     guncel_kur = kur_oku()
     gecerli_urunler, reklam_listesi = [], []
     
+    arama = request.args.get('search', '').lower().strip()
+    secili_marka = request.args.get('marka', '').strip()
+    
     for item in items:
         u_no = str(item.get('urun_no', '')).upper()
         kategori_adi = str(item.get('KATEGORİ', '')).upper()
+        
+        # Reklamlar her zaman yüklensin (Vitrinde 5'li dursun diye)
         if "REKLAM" in kategori_adi or "REKLAM" in u_no:
             item['resim_temiz'] = str(item.get('resim', '')).strip()
             reklam_listesi.append(item)
             continue
             
+        # EĞER ARAMA YAPILMAMIŞSA ÜRÜNLERİ HESAPLAMA (Boş sayfa için)
+        if not arama and not secili_marka:
+            continue
+
         liste_fiyat_ham = fiyat_sayiya_cevir(item.get('fiyat'))
         kampanya_orani = fiyat_sayiya_cevir(item.get('indirimli_fiyat'))
         marka_adi = str(item.get('marka', '')).upper()
@@ -150,7 +131,6 @@ def ana_sayfa():
         toplam_iskonto = bayi_iskonto + kampanya_orani
         
         if is_euro:
-            # Kur 4 basamaklı hassasiyetle çarpılıyor
             liste_tl = liste_fiyat_ham * guncel_kur
             normal_net_tl = liste_tl * (1 - (bayi_iskonto / 100))
             son_net_tl = liste_tl * (1 - (toplam_iskonto / 100))
@@ -171,14 +151,16 @@ def ana_sayfa():
         except: item['stok_durumu'] = 0
         gecerli_urunler.append(item)
         
-    markalar = sorted(list(set([str(u['marka']) for u in gecerli_urunler if u['marka']])))
-    arama = request.args.get('search', '').lower()
-    secili_marka = request.args.get('marka', '')
+    markalar = sorted(list(set([str(u['marka']) for u in verileri_yukle('urunler') if u.get('marka') and "REKLAM" not in str(u.get('KATEGORİ','')).upper()])))
+    
+    # Filtreleme
     urunler = [u for u in gecerli_urunler if (arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()) and (not secili_marka or str(u['marka']) == secili_marka)]
+    
     sepet_sayisi = sum(sepet_yukle_sunucudan().get(bayi_id, {}).values())
     
     return render_template('index.html', urunler=urunler, reklamlar=reklam_listesi, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], kur=guncel_kur, admin=session.get('admin_mi'), iskonto=bayi_iskonto)
 
+# ... (sepetim, sepete_ekle, kur_guncelle, cikis rotaları aynı kalacak) ...
 @app.route('/sepetim')
 def sepetim():
     if not session.get('giris_yapildi'): return redirect(url_for('login'))
@@ -192,7 +174,6 @@ def sepetim():
                 if "iskonto" in str(k).lower():
                     try: bayi_iskonto = float(v) if v != "" else 0
                     except: bayi_iskonto = 0
-
     sepet = sepet_yukle_sunucudan().get(bayi_id, {})
     tum_urunler = verileri_yukle('urunler')
     sepet_listesi, t_tl, guncel_kur = [], 0, kur_oku()
@@ -231,7 +212,6 @@ def sepet_sil(urun_no):
 
 @app.route('/kur_guncelle', methods=['POST'])
 def kur_guncelle_route():
-    # Admin panelinden gelen 4 basamaklı kuru kaydet
     with open(KUR_DOSYASI, 'w') as f: f.write(request.form.get('yeni_kur'))
     return redirect(url_for('ana_sayfa'))
 
