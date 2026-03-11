@@ -71,6 +71,19 @@ def verileri_yukle(sayfa_adi):
         return df.fillna('').to_dict(orient='records')
     except: return []
 
+# --- KRİTİK GÜNCELLEME ROTASI (BURAYI TEKRAR EKLEDİK) ---
+@app.route('/github_guncelle')
+def github_guncelle():
+    try:
+        repo = git.Repo("/home/otovolkan/portal")
+        repo.remotes.origin.pull()
+        # Sunucuyu otomatik yenilemek için WSGI dosyasının zamanını güncelle
+        wsgi_file = "/var/www/otovolkan_pythonanywhere_com_wsgi.py"
+        if os.path.exists(wsgi_file): os.utime(wsgi_file, None)
+        return 'Tamam! Veriler ve Kodlar Guncellendi.', 200
+    except Exception as e:
+        return f'Hata: {str(e)}', 500
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -114,13 +127,11 @@ def ana_sayfa():
         u_no = str(item.get('urun_no', '')).upper()
         kategori_adi = str(item.get('KATEGORİ', '')).upper()
         
-        # Reklamlar her zaman yüklensin (Vitrinde 5'li dursun diye)
         if "REKLAM" in kategori_adi or "REKLAM" in u_no:
             item['resim_temiz'] = str(item.get('resim', '')).strip()
             reklam_listesi.append(item)
             continue
             
-        # EĞER ARAMA YAPILMAMIŞSA ÜRÜNLERİ HESAPLAMA (Boş sayfa için)
         if not arama and not secili_marka:
             continue
 
@@ -151,16 +162,14 @@ def ana_sayfa():
         except: item['stok_durumu'] = 0
         gecerli_urunler.append(item)
         
-    markalar = sorted(list(set([str(u['marka']) for u in verileri_yukle('urunler') if u.get('marka') and "REKLAM" not in str(u.get('KATEGORİ','')).upper()])))
+    all_items = verileri_yukle('urunler')
+    markalar = sorted(list(set([str(u.get('marka', '')) for u in all_items if u.get('marka') and "REKLAM" not in str(u.get('KATEGORİ','')).upper()])))
     
-    # Filtreleme
     urunler = [u for u in gecerli_urunler if (arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()) and (not secili_marka or str(u['marka']) == secili_marka)]
-    
     sepet_sayisi = sum(sepet_yukle_sunucudan().get(bayi_id, {}).values())
     
     return render_template('index.html', urunler=urunler, reklamlar=reklam_listesi, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], kur=guncel_kur, admin=session.get('admin_mi'), iskonto=bayi_iskonto)
 
-# ... (sepetim, sepete_ekle, kur_guncelle, cikis rotaları aynı kalacak) ...
 @app.route('/sepetim')
 def sepetim():
     if not session.get('giris_yapildi'): return redirect(url_for('login'))
