@@ -34,12 +34,13 @@ def sepet_kaydet_sunucuya(bayi_id, sepet):
     except: pass
 
 def kur_oku():
-    if not os.path.exists(KUR_DOSYASI): return 36.50
+    if not os.path.exists(KUR_DOSYASI): return 36.5000
     try:
         with open(KUR_DOSYASI, 'r') as f:
             val = f.read().strip()
-            return float(val) if val else 36.50
-    except: return 36.50
+            # 4 basamaklı hassasiyete uygun okuma
+            return float(val) if val else 36.5000
+    except: return 36.5000
 
 def siparis_mail_at(bayi_adi, icerik):
     ALICILAR = ["info@otovolkan.com", "info@otovolkan.net"]
@@ -95,7 +96,7 @@ def github_guncelle():
         repo.remotes.origin.pull()
         wsgi_file = "/var/www/otovolkan_pythonanywhere_com_wsgi.py"
         if os.path.exists(wsgi_file): os.utime(wsgi_file, None)
-        return 'Tamam!', 200
+        return 'Sistem Guncellendi!', 200
     except Exception as e: return str(e), 500
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -106,7 +107,6 @@ def login():
             session.clear()
             session.update({'giris_yapildi': True, 'bayi_adi': 'YÖNETİCİ', 'bayi_id': 'admin', 'admin_mi': True, 'iskonto': 0})
             return redirect(url_for('ana_sayfa'))
-        
         bayiler = verileri_yukle('bayiler')
         bayi = next((b for b in bayiler if str(b.get('bayi_kodu','')).strip().lower() == girilen_kod), None)
         if bayi:
@@ -120,7 +120,6 @@ def login():
 def ana_sayfa():
     if not session.get('giris_yapildi'): return redirect(url_for('login'))
     
-    # --- KRİTİK GÜNCELLEME: İSKONTOYU ANLIK OKU ---
     bayi_id = session.get('bayi_id')
     bayi_iskonto = 0
     if not session.get('admin_mi'):
@@ -131,7 +130,6 @@ def ana_sayfa():
                 if "iskonto" in str(k).lower():
                     try: bayi_iskonto = float(v) if v != "" else 0
                     except: bayi_iskonto = 0
-    # ---------------------------------------------
 
     items = verileri_yukle('urunler')
     guncel_kur = kur_oku()
@@ -140,7 +138,6 @@ def ana_sayfa():
     for item in items:
         u_no = str(item.get('urun_no', '')).upper()
         kategori_adi = str(item.get('KATEGORİ', '')).upper()
-        
         if "REKLAM" in kategori_adi or "REKLAM" in u_no:
             item['resim_temiz'] = str(item.get('resim', '')).strip()
             reklam_listesi.append(item)
@@ -150,10 +147,10 @@ def ana_sayfa():
         kampanya_orani = fiyat_sayiya_cevir(item.get('indirimli_fiyat'))
         marka_adi = str(item.get('marka', '')).upper()
         is_euro = ("BANNER" in marka_adi or "EURO" in str(item.get('para_birimi','')).upper())
-        
         toplam_iskonto = bayi_iskonto + kampanya_orani
         
         if is_euro:
+            # Kur 4 basamaklı hassasiyetle çarpılıyor
             liste_tl = liste_fiyat_ham * guncel_kur
             normal_net_tl = liste_tl * (1 - (bayi_iskonto / 100))
             son_net_tl = liste_tl * (1 - (toplam_iskonto / 100))
@@ -178,18 +175,14 @@ def ana_sayfa():
     arama = request.args.get('search', '').lower()
     secili_marka = request.args.get('marka', '')
     urunler = [u for u in gecerli_urunler if (arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()) and (not secili_marka or str(u['marka']) == secili_marka)]
-    
     sepet_sayisi = sum(sepet_yukle_sunucudan().get(bayi_id, {}).values())
     
     return render_template('index.html', urunler=urunler, reklamlar=reklam_listesi, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], kur=guncel_kur, admin=session.get('admin_mi'), iskonto=bayi_iskonto)
 
-# ... (sepetim ve diğer rotalar güncel iskonto mantığıyla aynı şekilde devam eder) ...
 @app.route('/sepetim')
 def sepetim():
     if not session.get('giris_yapildi'): return redirect(url_for('login'))
     bayi_id = session.get('bayi_id')
-    
-    # Sepette de güncel iskontoyu çek
     bayi_iskonto = 0
     if not session.get('admin_mi'):
         bayiler = verileri_yukle('bayiler')
@@ -217,7 +210,7 @@ def sepetim():
             u_copy = urun.copy()
             u_copy.update({'adet': adet, 'koli_ici': k_ici, 'koli_sayisi': adet // k_ici if k_ici > 1 else 0, 'kalan_adet': adet % k_ici if k_ici > 1 else 0, 'birim_gosterim': format_fiyat_birimli(net_birim_tl, "TL"), 'ara_toplam_gosterim': format_fiyat_birimli(net_birim_tl * adet, "TL")})
             sepet_listesi.append(u_copy)
-    return render_template('sepet.html', sepet=sepet_listesi, toplam_tl=format_fiyat_birimli(t_tl, "TL"), kur=f"{guncel_kur:,.2f}".replace('.', ','), bayi_adi=session['bayi_adi'], wp_no="905335033019", iskonto=bayi_iskonto)
+    return render_template('sepet.html', sepet=sepet_listesi, toplam_tl=format_fiyat_birimli(t_tl, "TL"), kur=f"{guncel_kur:,.4f}".replace('.', ','), bayi_adi=session['bayi_adi'], wp_no="905335033019", iskonto=bayi_iskonto)
 
 @app.route('/sepete_ekle/<urun_no>')
 def sepete_ekle(urun_no):
@@ -238,6 +231,7 @@ def sepet_sil(urun_no):
 
 @app.route('/kur_guncelle', methods=['POST'])
 def kur_guncelle_route():
+    # Admin panelinden gelen 4 basamaklı kuru kaydet
     with open(KUR_DOSYASI, 'w') as f: f.write(request.form.get('yeni_kur'))
     return redirect(url_for('ana_sayfa'))
 
