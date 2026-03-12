@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify, make_response
+from Flask import Flask, render_template, request, session, redirect, url_for, jsonify, make_response
 import pandas as pd
 import os
 import re
@@ -14,7 +14,7 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = "Oto959595-"
 app.permanent_session_lifetime = timedelta(days=31)
 
-# YOLLARI SABİTLEDİK
+# YOLLARI PYTHONANYWHERE İÇİN SABİTLEDİK
 BASE_DIR = "/home/otovolkan/portal"
 SEPET_ARŞİVİ = os.path.join(BASE_DIR, 'sepet_kayitlari.json')
 KUR_DOSYASI = os.path.join(BASE_DIR, 'kur.txt')
@@ -23,17 +23,20 @@ SIPARIS_LOG_DOSYASI = os.path.join(BASE_DIR, 'tum_siparisler.txt')
 def sepet_yukle_sunucudan():
     if not os.path.exists(SEPET_ARŞİVİ): return {}
     try:
-        with open(SEPET_ARŞİVİ, 'r', encoding='utf-8') as f: return json.load(f)
+        with open(SEPET_ARŞİVİ, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
     except: return {}
 
 def sepet_kaydet_sunucuya(bayi_id, sepet):
-    arsiv = sepet_yukle_sunucudan()
-    arsiv[bayi_id] = sepet
     try:
+        arsiv = sepet_yukle_sunucudan()
+        arsiv[str(bayi_id)] = sepet
         with open(SEPET_ARŞİVİ, 'w', encoding='utf-8') as f:
             json.dump(arsiv, f, ensure_ascii=False, indent=4)
         os.chmod(SEPET_ARŞİVİ, 0o666)
-    except: pass
+    except Exception as e:
+        print(f"Kayit Hatasi: {e}")
 
 def kur_oku():
     if not os.path.exists(KUR_DOSYASI): return 36.50
@@ -51,10 +54,10 @@ def siparis_mail_at(bayi_adi, icerik):
         msg = MIMEMultipart()
         msg['From'] = GONDERICI
         msg['To'] = ", ".join(ALICILAR)
-        msg['Subject'] = f"B2B Siparis: {bayi_adi}"
+        msg['Subject'] = f"YENI SIPARIS: {bayi_adi}"
         msg.attach(MIMEText(icerik, 'plain', 'utf-8'))
         context = ssl.create_default_context()
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=10) as server:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
             server.login(GONDERICI, SIFRE)
             server.sendmail(GONDERICI, ALICILAR, msg.as_string())
         return True
@@ -104,7 +107,7 @@ def login():
         girilen_kod = str(request.form.get('bayi_kodu', '')).strip().lower()
         if girilen_kod == "admin95":
             session.clear()
-            session.update({'giris_yapildi': True, 'bayi_adi': 'YÖNETİCİ', 'bayi_id': 'admin', 'admin_mi': True, 'iskonto': 0})
+            session.update({'giris_yapildi': True, 'bayi_adi': 'YÖNETİCİ', 'bayi_id': 'admin', 'iskonto': 0})
             return redirect(url_for('ana_sayfa'))
         bayiler = verileri_yukle('bayiler')
         bayi = next((b for b in bayiler if str(b.get('bayi_kodu','')).strip().lower() == girilen_kod), None)
@@ -114,9 +117,8 @@ def login():
                 if "iskonto" in str(k).lower():
                     try: iskonto_orani = float(v) if v != "" else 0
                     except: pass
-            bayi_id = str(bayi.get('bayi_kodu')).strip().upper()
             session.clear()
-            session.update({'giris_yapildi': True, 'bayi_adi': bayi['bayi_adi'], 'bayi_id': bayi_id, 'admin_mi': False, 'iskonto': iskonto_orani})
+            session.update({'giris_yapildi': True, 'bayi_adi': bayi['bayi_adi'], 'bayi_id': str(bayi.get('bayi_kodu')).upper(), 'iskonto': iskonto_orani})
             return redirect(url_for('ana_sayfa'))
     return render_template('login.html')
 
@@ -127,30 +129,24 @@ def ana_sayfa():
     iskonto = session.get('iskonto', 0)
     bayi_id = session.get('bayi_id')
     guncel_kur = kur_oku()
-    gecerli_urunler, reklam_listesi = [], []
-    
     arama = request.args.get('search', '').lower().strip()
     secili_marka = request.args.get('marka', '').strip()
-
-    # EĞER ARAMA VEYA MARKA SEÇİMİ YOKSA ÜRÜN LİSTESİ BOŞ KALSIN
+    
+    reklam_listesi, gecerli_urunler = [], []
     liste_aktif = bool(arama or secili_marka)
 
     for item in items:
         u_no = str(item.get('urun_no', '')).upper()
-        u_adi = str(item.get('urun_adi', '')).lower()
-        kategori_adi = str(item.get('KATEGORİ', '')).upper()
-        item_marka = str(item.get('marka', '')).strip()
-
-        # Reklamlar her zaman listelenir
-        if "REKLAM" in kategori_adi or "REKLAM" in u_no:
+        kategori = str(item.get('KATEGORİ', '')).upper()
+        if "REKLAM" in kategori or "REKLAM" in u_no:
             item['resim_temiz'] = str(item.get('resim', '')).strip()
             reklam_listesi.append(item)
             continue
         
-        # Sadece arama/marka varsa ürünleri işle
-        if not liste_aktif:
-            continue
+        if not liste_aktif: continue
             
+        u_adi = str(item.get('urun_adi', '')).lower()
+        item_marka = str(item.get('marka', '')).strip()
         is_match = False
         if arama and (arama in u_adi or arama in u_no.lower()): is_match = True
         if secili_marka:
@@ -163,52 +159,18 @@ def ana_sayfa():
         if not is_match: continue
 
         ham_fiyat = fiyat_sayiya_cevir(item.get('fiyat'))
-        ind_fiyat_ham = fiyat_sayiya_cevir(item.get('indirimli_fiyat'))
+        ind_fiyat = fiyat_sayiya_cevir(item.get('indirimli_fiyat'))
         is_euro = ("BANNER" in item_marka.upper() or "EURO" in str(item.get('para_birimi','')).upper())
         
-        if is_euro:
-            liste_tl = ham_fiyat * guncel_kur
-            net_tl = ind_fiyat_ham * guncel_kur if ind_fiyat_ham > 0 else liste_tl * (1 - (iskonto / 100))
-        else:
-            liste_tl = ham_fiyat
-            net_tl = ind_fiyat_ham if ind_fiyat_ham > 0 else liste_tl * (1 - (iskonto / 100))
+        fiyat_tl = ham_fiyat * guncel_kur if is_euro else ham_fiyat
+        net_tl = (ind_fiyat * (guncel_kur if is_euro else 1)) if ind_fiyat > 0 else fiyat_tl * (1 - (iskonto / 100))
             
-        item['liste_fiyat_gosterim'] = format_fiyat_birimli(liste_tl, "TL")
-        item['fiyat_gosterim'] = format_fiyat_birimli(net_tl, "TL")
-        item['iskonto_var_mi'] = (ind_fiyat_ham > 0) or (iskonto > 0)
-        item['resim_temiz'] = str(item.get('resim', '')).strip()
-        item['koli_ici'] = koli_ici_belirle(item)
-        
-        try:
-            stok_val = str(item.get('stok', '0')).strip()
-            item['stok_durumu'] = int(float(stok_val)) if stok_val and stok_val != 'nan' else 0
-        except: item['stok_durumu'] = 0
+        item.update({'liste_fiyat_gosterim': format_fiyat_birimli(fiyat_tl, "TL"), 'fiyat_gosterim': format_fiyat_birimli(net_tl, "TL"), 'resim_temiz': str(item.get('resim', '')).strip(), 'koli_ici': koli_ici_belirle(item)})
         gecerli_urunler.append(item)
         
-    markalar = sorted(list(set([str(u['marka']) for u in items if u.get('marka') and "REKLAM" not in str(u.get('KATEGORİ','')).upper()])))
+    markalar = sorted(list(set([str(u['marka']) for u in items if u.get('marka')])))
     sepet = sepet_yukle_sunucudan().get(bayi_id, {})
-    sepet_sayisi = sum(sepet.values())
-    
-    return render_template('index.html', urunler=gecerli_urunler, reklamlar=reklam_listesi, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], kur=guncel_kur, admin=session.get('admin_mi'), iskonto=iskonto)
-
-@app.route('/sepet_onayla', methods=['POST'])
-def sepet_onayla():
-    if not session.get('giris_yapildi'): return redirect(url_for('login'))
-    bayi_id, bayi_adi = session.get('bayi_id'), session.get('bayi_adi')
-    
-    # AJAX veya Form üzerinden gelen veriyi al
-    data = request.get_json() if request.is_json else request.form
-    mesaj_icerigi = data.get('mesaj', '') if data else ""
-    
-    # Log ve Mail
-    siparis_mail_at(bayi_adi, mesaj_icerigi)
-    
-    # SEPETİ BOŞALT
-    sepet_kaydet_sunucuya(bayi_id, {})
-    
-    if request.is_json:
-        return jsonify({"status": "success"})
-    return render_template('tamam.html', mesaj="Siparişiniz başarıyla ulaştı.")
+    return render_template('index.html', urunler=gecerli_urunler, reklamlar=reklam_listesi, markalar=markalar, sepet_sayisi=sum(sepet.values()), bayi_adi=session['bayi_adi'], kur=guncel_kur, iskonto=iskonto)
 
 @app.route('/sepetim')
 def sepetim():
@@ -219,19 +181,39 @@ def sepetim():
     iskonto = session.get('iskonto', 0)
     sepet_listesi, t_tl, guncel_kur = [], 0, kur_oku()
     for u_no, adet in sepet.items():
-        urun = next((u for u in tum_urunler if str(u['urun_no']) == u_no), None)
+        urun = next((u for u in tum_urunler if str(u['urun_no']) == str(u_no)), None)
         if urun:
-            ham_fiyat = fiyat_sayiya_cevir(urun.get('fiyat'))
-            ind_fiyat_ham = fiyat_sayiya_cevir(urun.get('indirimli_fiyat'))
+            ham = fiyat_sayiya_cevir(urun.get('fiyat'))
+            ind = fiyat_sayiya_cevir(urun.get('indirimli_fiyat'))
             is_euro = ("BANNER" in str(urun.get('marka','')).upper() or "EURO" in str(urun.get('para_birimi','')).upper())
-            if is_euro: net_birim_tl = ind_fiyat_ham * guncel_kur if ind_fiyat_ham > 0 else (ham_fiyat * guncel_kur * (1 - (iskonto / 100)))
-            else: net_birim_tl = ind_fiyat_ham if ind_fiyat_ham > 0 else (ham_fiyat * (1 - (iskonto / 100)))
-            t_tl += (net_birim_tl * adet)
-            k_ici = koli_ici_belirle(urun)
+            net = (ind * (guncel_kur if is_euro else 1)) if ind > 0 else (ham * (guncel_kur if is_euro else 1) * (1 - (iskonto / 100)))
+            t_tl += (net * adet)
             u_copy = urun.copy()
-            u_copy.update({'adet': adet, 'koli_ici': k_ici, 'koli_sayisi': adet // k_ici if k_ici > 1 else 0, 'kalan_adet': adet % k_ici if k_ici > 1 else 0, 'birim_gosterim': format_fiyat_birimli(net_birim_tl, "TL"), 'ara_toplam_gosterim': format_fiyat_birimli(net_birim_tl * adet, "TL")})
+            u_copy.update({'adet': adet, 'birim_gosterim': format_fiyat_birimli(net, "TL"), 'ara_toplam_gosterim': format_fiyat_birimli(net * adet, "TL")})
             sepet_listesi.append(u_copy)
     return render_template('sepet.html', sepet=sepet_listesi, toplam_tl=format_fiyat_birimli(t_tl, "TL"), kur=f"{guncel_kur:,.2f}".replace('.', ','), bayi_adi=session['bayi_adi'], wp_no="905335033019", iskonto=iskonto)
+
+@app.route('/sepet_onayla', methods=['POST'])
+def sepet_onayla():
+    if not session.get('giris_yapildi'): return redirect(url_for('login'))
+    bayi_id, bayi_adi = session.get('bayi_id'), session.get('bayi_adi')
+    arsiv = sepet_yukle_sunucudan()
+    sepet = arsiv.get(bayi_id, {})
+    if not sepet: return redirect(url_for('sepetim'))
+    
+    tum_urunler = verileri_yukle('urunler')
+    mail_icerik = f"Siparis: {bayi_adi}\n" + "-"*20 + "\n"
+    for u_no, adet in sepet.items():
+        urun = next((u for u in tum_urunler if str(u['urun_no']) == str(u_no)), None)
+        mail_icerik += f"- {urun['urun_adi'] if urun else u_no} | Adet: {adet}\n"
+    
+    siparis_mail_at(bayi_adi, mail_icerik)
+    
+    # KESİN TEMİZLİK
+    arsiv[bayi_id] = {}
+    sepet_kaydet_sunucuya(bayi_id, {})
+    
+    return render_template('tamam.html', mesaj="Siparişiniz başarıyla ulaştı.")
 
 @app.route('/sepete_ekle/<urun_no>')
 def sepete_ekle(urun_no):
