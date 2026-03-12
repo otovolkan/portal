@@ -53,15 +53,14 @@ def fiyat_sayiya_cevir(deger):
 def format_fiyat_birimli(sayi, birim):
     return f"{sayi:,.2f} {birim}".replace(',', 'X').replace('.', ',').replace('X', '.')
 
+# SADECE EXCEL'DEKİ KOLİ SÜTUNUNA BAKAR
 def koli_ici_belirle(item):
     for k, v in item.items():
         if "koli" in str(k).lower():
             try:
                 if v != "" and float(v) > 1: return int(float(v))
             except: pass
-    urun_adi = str(item.get('urun_adi', ''))
-    matches = re.findall(r'\((\d+)\)', urun_adi)
-    return int(matches[-1]) if matches and int(matches[-1]) > 1 else 1
+    return 1
 
 def verileri_yukle(sayfa_adi):
     path = os.path.join(BASE_DIR, 'urunler.xlsx')
@@ -71,13 +70,11 @@ def verileri_yukle(sayfa_adi):
         return df.fillna('').to_dict(orient='records')
     except: return []
 
-# --- KRİTİK GÜNCELLEME ROTASI (BURAYI TEKRAR EKLEDİK) ---
 @app.route('/github_guncelle')
 def github_guncelle():
     try:
         repo = git.Repo("/home/otovolkan/portal")
         repo.remotes.origin.pull()
-        # Sunucuyu otomatik yenilemek için WSGI dosyasının zamanını güncelle
         wsgi_file = "/var/www/otovolkan_pythonanywhere_com_wsgi.py"
         if os.path.exists(wsgi_file): os.utime(wsgi_file, None)
         return 'Tamam! Veriler ve Kodlar Guncellendi.', 200
@@ -104,7 +101,6 @@ def login():
 @app.route('/')
 def ana_sayfa():
     if not session.get('giris_yapildi'): return redirect(url_for('login'))
-    
     bayi_id = session.get('bayi_id')
     bayi_iskonto = 0
     if not session.get('admin_mi'):
@@ -115,32 +111,24 @@ def ana_sayfa():
                 if "iskonto" in str(k).lower():
                     try: bayi_iskonto = float(v) if v != "" else 0
                     except: bayi_iskonto = 0
-
     items = verileri_yukle('urunler')
     guncel_kur = kur_oku()
     gecerli_urunler, reklam_listesi = [], []
-    
     arama = request.args.get('search', '').lower().strip()
     secili_marka = request.args.get('marka', '').strip()
-    
     for item in items:
         u_no = str(item.get('urun_no', '')).upper()
         kategori_adi = str(item.get('KATEGORİ', '')).upper()
-        
         if "REKLAM" in kategori_adi or "REKLAM" in u_no:
             item['resim_temiz'] = str(item.get('resim', '')).strip()
             reklam_listesi.append(item)
             continue
-            
-        if not arama and not secili_marka:
-            continue
-
+        if not arama and not secili_marka: continue
         liste_fiyat_ham = fiyat_sayiya_cevir(item.get('fiyat'))
         kampanya_orani = fiyat_sayiya_cevir(item.get('indirimli_fiyat'))
         marka_adi = str(item.get('marka', '')).upper()
         is_euro = ("BANNER" in marka_adi or "EURO" in str(item.get('para_birimi','')).upper())
         toplam_iskonto = bayi_iskonto + kampanya_orani
-        
         if is_euro:
             liste_tl = liste_fiyat_ham * guncel_kur
             normal_net_tl = liste_tl * (1 - (bayi_iskonto / 100))
@@ -149,25 +137,20 @@ def ana_sayfa():
             liste_tl = liste_fiyat_ham
             normal_net_tl = liste_tl * (1 - (bayi_iskonto / 100))
             son_net_tl = liste_tl * (1 - (toplam_iskonto / 100))
-            
         item['liste_fiyat_gosterim'] = format_fiyat_birimli(normal_net_tl, "TL")
         item['fiyat_gosterim'] = format_fiyat_birimli(son_net_tl, "TL")
         item['ozel_kampanya_var_mi'] = kampanya_orani > 0
         item['resim_temiz'] = str(item.get('resim', '')).strip()
         item['koli_ici'] = koli_ici_belirle(item)
-        
         try:
             stok_val = str(item.get('stok', '0')).strip()
             item['stok_durumu'] = int(float(stok_val)) if stok_val and stok_val != 'nan' else 0
         except: item['stok_durumu'] = 0
         gecerli_urunler.append(item)
-        
     all_items = verileri_yukle('urunler')
     markalar = sorted(list(set([str(u.get('marka', '')) for u in all_items if u.get('marka') and "REKLAM" not in str(u.get('KATEGORİ','')).upper()])))
-    
     urunler = [u for u in gecerli_urunler if (arama in str(u['urun_adi']).lower() or arama in str(u['urun_no']).lower()) and (not secili_marka or str(u['marka']) == secili_marka)]
     sepet_sayisi = sum(sepet_yukle_sunucudan().get(bayi_id, {}).values())
-    
     return render_template('index.html', urunler=urunler, reklamlar=reklam_listesi, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], kur=guncel_kur, admin=session.get('admin_mi'), iskonto=bayi_iskonto)
 
 @app.route('/sepetim')
@@ -205,7 +188,11 @@ def sepetim():
 @app.route('/sepete_ekle/<urun_no>')
 def sepete_ekle(urun_no):
     bayi_id = session.get('bayi_id')
-    miktar = request.args.get('miktar', 1, type=int)
+    try:
+        miktar = int(request.args.get('miktar', 1))
+        if miktar < 1: miktar = 1
+    except:
+        miktar = 1
     sepet = sepet_yukle_sunucudan().get(bayi_id, {})
     sepet[str(urun_no)] = sepet.get(str(urun_no), 0) + miktar
     sepet_kaydet_sunucuya(bayi_id, sepet)
