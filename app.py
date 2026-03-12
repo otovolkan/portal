@@ -88,7 +88,6 @@ def verileri_yukle(sayfa_adi):
         return df.fillna('').to_dict(orient='records')
     except: return []
 
-# DÜZELTİLDİ: Hem GET hem POST izni verildi
 @app.route('/github_guncelle', methods=['GET', 'POST'])
 def github_guncelle():
     try:
@@ -133,29 +132,35 @@ def ana_sayfa():
     arama = request.args.get('search', '').lower().strip()
     secili_marka = request.args.get('marka', '').strip()
 
+    # EĞER ARAMA VEYA MARKA SEÇİMİ YOKSA ÜRÜN LİSTESİ BOŞ KALSIN
+    liste_aktif = bool(arama or secili_marka)
+
     for item in items:
         u_no = str(item.get('urun_no', '')).upper()
         u_adi = str(item.get('urun_adi', '')).lower()
         kategori_adi = str(item.get('KATEGORİ', '')).upper()
         item_marka = str(item.get('marka', '')).strip()
 
+        # Reklamlar her zaman listelenir
         if "REKLAM" in kategori_adi or "REKLAM" in u_no:
             item['resim_temiz'] = str(item.get('resim', '')).strip()
             reklam_listesi.append(item)
             continue
         
-        # Filtreleme
+        # Sadece arama/marka varsa ürünleri işle
+        if not liste_aktif:
+            continue
+            
         is_match = False
-        if arama or secili_marka:
-            if arama and (arama in u_adi or arama in u_no.lower()): is_match = True
-            if secili_marka:
-                if arama:
-                    if is_match and item_marka == secili_marka: is_match = True
-                    else: is_match = False
-                else:
-                    if item_marka == secili_marka: is_match = True
+        if arama and (arama in u_adi or arama in u_no.lower()): is_match = True
+        if secili_marka:
+            if arama:
+                if is_match and item_marka == secili_marka: is_match = True
+                else: is_match = False
+            else:
+                if item_marka == secili_marka: is_match = True
         
-        if not is_match and (arama or secili_marka): continue
+        if not is_match: continue
 
         ham_fiyat = fiyat_sayiya_cevir(item.get('fiyat'))
         ind_fiyat_ham = fiyat_sayiya_cevir(item.get('indirimli_fiyat'))
@@ -180,11 +185,30 @@ def ana_sayfa():
         except: item['stok_durumu'] = 0
         gecerli_urunler.append(item)
         
-    markalar = sorted(list(set([str(u['marka']) for u in items if u.get('marka')])))
+    markalar = sorted(list(set([str(u['marka']) for u in items if u.get('marka') and "REKLAM" not in str(u.get('KATEGORİ','')).upper()])))
     sepet = sepet_yukle_sunucudan().get(bayi_id, {})
     sepet_sayisi = sum(sepet.values())
     
     return render_template('index.html', urunler=gecerli_urunler, reklamlar=reklam_listesi, markalar=markalar, sepet_sayisi=sepet_sayisi, bayi_adi=session['bayi_adi'], kur=guncel_kur, admin=session.get('admin_mi'), iskonto=iskonto)
+
+@app.route('/sepet_onayla', methods=['POST'])
+def sepet_onayla():
+    if not session.get('giris_yapildi'): return redirect(url_for('login'))
+    bayi_id, bayi_adi = session.get('bayi_id'), session.get('bayi_adi')
+    
+    # AJAX veya Form üzerinden gelen veriyi al
+    data = request.get_json() if request.is_json else request.form
+    mesaj_icerigi = data.get('mesaj', '') if data else ""
+    
+    # Log ve Mail
+    siparis_mail_at(bayi_adi, mesaj_icerigi)
+    
+    # SEPETİ BOŞALT
+    sepet_kaydet_sunucuya(bayi_id, {})
+    
+    if request.is_json:
+        return jsonify({"status": "success"})
+    return render_template('tamam.html', mesaj="Siparişiniz başarıyla ulaştı.")
 
 @app.route('/sepetim')
 def sepetim():
@@ -208,26 +232,6 @@ def sepetim():
             u_copy.update({'adet': adet, 'koli_ici': k_ici, 'koli_sayisi': adet // k_ici if k_ici > 1 else 0, 'kalan_adet': adet % k_ici if k_ici > 1 else 0, 'birim_gosterim': format_fiyat_birimli(net_birim_tl, "TL"), 'ara_toplam_gosterim': format_fiyat_birimli(net_birim_tl * adet, "TL")})
             sepet_listesi.append(u_copy)
     return render_template('sepet.html', sepet=sepet_listesi, toplam_tl=format_fiyat_birimli(t_tl, "TL"), kur=f"{guncel_kur:,.2f}".replace('.', ','), bayi_adi=session['bayi_adi'], wp_no="905335033019", iskonto=iskonto)
-
-@app.route('/sepet_onayla', methods=['POST'])
-def sepet_onayla():
-    if not session.get('giris_yapildi'): return redirect(url_for('login'))
-    bayi_id, bayi_adi = session.get('bayi_id'), session.get('bayi_adi')
-    data = request.json
-    mesaj_icerigi = data.get('mesaj', '') if data else ""
-    
-    # Log kaydı
-    tarih_str = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-    with open(SIPARIS_LOG_DOSYASI, "a", encoding="utf-8") as f:
-        f.write(f"\n{'='*50}\nTARIH: {tarih_str}\nBAYI: {bayi_adi}\nDETAY:\n{mesaj_icerigi}\n{'='*50}\n")
-    
-    # Mail Gönderimi
-    siparis_mail_at(bayi_adi, mesaj_icerigi)
-    
-    # SEPETİ BOŞALT
-    sepet_kaydet_sunucuya(bayi_id, {})
-    
-    return jsonify({"status": "success"})
 
 @app.route('/sepete_ekle/<urun_no>')
 def sepete_ekle(urun_no):
