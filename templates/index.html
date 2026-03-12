@@ -12,27 +12,18 @@
         .bayi-vurgu { font-size: 0.8rem; color: #fff; opacity: 0.9; display: block; }
         .destek-hatti { color: #fff !important; font-weight: bold; text-decoration: none; font-size: 1.1rem; transition: 0.3s; }
         .destek-hatti:hover { color: #ffc107 !important; }
-        
-        /* REKLAM ALANI */
         .reklam-kutu { height: 300px; overflow: hidden; border-radius: 12px; margin-bottom: 20px; background: #fff; border: 1px solid #dee2e6; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .reklam-kutu img { width: 100%; height: 100%; object-fit: contain; padding: 10px; cursor: pointer; }
-        
-        /* TABLO VE KONTEYNER */
         .table-container { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; }
         .stok-var { color: #198754; font-weight: bold; font-size: 0.85rem; }
         .stok-yok { color: #dc3545; font-weight: bold; font-size: 0.85rem; }
         .koli-bilgi { font-size: 0.75rem; color: #6c757d; display: block; }
         .kdv-notu { font-size: 0.65rem; color: #6c757d; font-weight: normal; display: block; margin-top: -3px; }
-
-        /* İŞLEM GRUBU */
         .islem-grubu { display: flex; align-items: center; justify-content: center; min-width: 185px; }
-        .miktar-input { width: 55px; text-align: center; border: 2px solid #0d6efd; border-radius: 5px; font-weight: bold; margin-right: 5px; height: 38px; }
-        
-        /* MODAL (RESİM BÜYÜTME) */
+        .miktar-input { width: 65px; text-align: center; border: 2px solid #0d6efd; border-radius: 5px; font-weight: bold; margin-right: 5px; height: 38px; }
         .modal-custom { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
         .modal-content-custom { position: relative; background: #fff; margin: 3% auto; padding: 25px; width: 50%; border-radius: 15px; text-align: center; }
         .close-btn { position: absolute; right: 20px; top: 15px; font-size: 35px; cursor: pointer; color: #333; font-weight: bold; }
-
         @media (min-width: 992px) { .col-lg-2-4 { width: 20% !important; flex: 0 0 20%; } }
         @media (max-width: 767px) { .reklam-kutu { height: 160px; } .modal-content-custom { width: 92%; margin: 15% auto; } .destek-hatti { font-size: 0.9rem; } }
     </style>
@@ -60,7 +51,6 @@
                 </a>
             </div>
         </div>
-        
         <div class="d-flex align-items-center">
             <a href="/sepetim" class="btn btn-warning btn-lg me-3 shadow-sm fw-bold position-relative px-4 text-uppercase">
                 🛒 SEPETİM ({{ sepet_sayisi }})
@@ -68,24 +58,9 @@
             <a href="/cikis" class="btn btn-outline-light fw-bold shadow-sm px-3 text-uppercase">ÇIKIŞ</a>
         </div>
     </div>
-    <div class="container d-lg-none text-center mt-2">
-        <a href="tel:05335033019" class="destek-hatti small">📞 DESTEK: 0533 503 30 19</a>
-    </div>
 </nav>
 
 <div class="container-fluid px-4 mt-4">
-    {% if admin == True %}
-    <div class="container mb-4 text-center">
-        <div class="bg-warning bg-opacity-25 p-4 rounded-4 border border-warning shadow-sm">
-            <form action="/kur_guncelle" method="POST" class="row g-3 align-items-center justify-content-center">
-                <div class="col-auto"><span class="fw-bold text-dark fs-5">💶 EURO KURU GÜNCELLE (4 Basamak):</span></div>
-                <div class="col-auto"><input type="number" step="0.0001" name="yeni_kur" class="form-control form-control-lg fw-bold border-dark text-primary" style="width: 150px;" value="{{ '%.4f'|format(kur) }}"></div>
-                <div class="col-auto"><button type="submit" class="btn btn-dark btn-lg fw-bold px-5 shadow">KAYDET</button></div>
-            </form>
-        </div>
-    </div>
-    {% endif %}
-
     <div class="row g-3 mb-4">
         {% for reklam in reklamlar %}
         <div class="col-6 col-md-4 col-lg-2-4">
@@ -134,9 +109,9 @@
                                     <input type="number" id="qty_{{ p.urun_no }}" class="miktar-input" value="1" min="1">
                                     <div class="btn-group">
                                         {% if p.koli_ici > 1 %}
-                                            <button class="btn btn-success btn-sm fw-bold px-3" onclick="sepeteTopluGit('{{ p.urun_no }}', {{ p.koli_ici }})">KOLİ EKLE</button>
+                                            <button class="btn btn-success btn-sm fw-bold px-3" onclick="sepeteHesapliGit('{{ p.urun_no }}', {{ p.koli_ici }})">KOLİ EKLE</button>
                                         {% else %}
-                                            <button class="btn btn-primary btn-sm fw-bold px-3" onclick="sepeteTopluGit('{{ p.urun_no }}', 1)">ADET EKLE</button>
+                                            <button class="btn btn-primary btn-sm fw-bold px-3" onclick="sepeteHesapliGit('{{ p.urun_no }}', 1)">ADET EKLE</button>
                                         {% endif %}
                                         <button class="btn btn-outline-dark btn-sm fw-bold" onclick="forceOpenImage('{{ p.resim_temiz }}', '{{ p.urun_adi }}')">🔍</button>
                                     </div>
@@ -161,11 +136,16 @@
 </div>
 
 <script>
-function sepeteTopluGit(uNo, carpan) { 
+function sepeteHesapliGit(uNo, carpan) { 
     let input = document.getElementById('qty_' + uNo); 
-    let val = parseInt(input.value); 
-    if (val > 0) window.location.href = '/sepete_ekle/' + uNo + '?miktar=' + (val * carpan); 
+    if (!input) return;
+    let miktar = parseInt(input.value); 
+    let sonSonuc = miktar * carpan; // Koli ise çarpar, adetse (1 ile) çarpar
+    if (sonSonuc > 0) {
+        window.location.href = '/sepete_ekle/' + uNo + '?miktar=' + sonSonuc; 
+    }
 }
+
 function openModal(imgSrc, title) { 
     document.getElementById('modalImg').src = imgSrc; 
     document.getElementById('modalTitle').innerText = title; 
