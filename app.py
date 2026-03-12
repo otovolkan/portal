@@ -1,4 +1,4 @@
-from Flask import Flask, render_template, request, session, redirect, url_for, jsonify, make_response
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify, make_response
 import pandas as pd
 import os
 import re
@@ -14,11 +14,10 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = "Oto959595-"
 app.permanent_session_lifetime = timedelta(days=31)
 
-# YOLLARI PYTHONANYWHERE İÇİN SABİTLEDİK
+# YOLLARI SABİTLEDİK (Hata payı sıfır)
 BASE_DIR = "/home/otovolkan/portal"
 SEPET_ARŞİVİ = os.path.join(BASE_DIR, 'sepet_kayitlari.json')
 KUR_DOSYASI = os.path.join(BASE_DIR, 'kur.txt')
-SIPARIS_LOG_DOSYASI = os.path.join(BASE_DIR, 'tum_siparisler.txt')
 
 def sepet_yukle_sunucudan():
     if not os.path.exists(SEPET_ARŞİVİ): return {}
@@ -35,8 +34,7 @@ def sepet_kaydet_sunucuya(bayi_id, sepet):
         with open(SEPET_ARŞİVİ, 'w', encoding='utf-8') as f:
             json.dump(arsiv, f, ensure_ascii=False, indent=4)
         os.chmod(SEPET_ARŞİVİ, 0o666)
-    except Exception as e:
-        print(f"Kayit Hatasi: {e}")
+    except: pass
 
 def kur_oku():
     if not os.path.exists(KUR_DOSYASI): return 36.50
@@ -64,7 +62,7 @@ def siparis_mail_at(bayi_adi, icerik):
     except: return False
 
 def fiyat_sayiya_cevir(deger):
-    if not deger: return 0.0
+    if not deger or pd.isna(deger): return 0.0
     s = re.sub(r'[^\d,.]', '', str(deger))
     try:
         if ',' in s and '.' in s: s = s.replace('.', '').replace(',', '.')
@@ -112,13 +110,13 @@ def login():
         bayiler = verileri_yukle('bayiler')
         bayi = next((b for b in bayiler if str(b.get('bayi_kodu','')).strip().lower() == girilen_kod), None)
         if bayi:
-            iskonto_orani = 0
+            isk_orani = 0
             for k, v in bayi.items():
                 if "iskonto" in str(k).lower():
-                    try: iskonto_orani = float(v) if v != "" else 0
+                    try: isk_orani = float(v) if v != "" else 0
                     except: pass
             session.clear()
-            session.update({'giris_yapildi': True, 'bayi_adi': bayi['bayi_adi'], 'bayi_id': str(bayi.get('bayi_kodu')).upper(), 'iskonto': iskonto_orani})
+            session.update({'giris_yapildi': True, 'bayi_adi': bayi['bayi_adi'], 'bayi_id': str(bayi.get('bayi_kodu')).upper(), 'iskonto': isk_orani})
             return redirect(url_for('ana_sayfa'))
     return render_template('login.html')
 
@@ -162,10 +160,10 @@ def ana_sayfa():
         ind_fiyat = fiyat_sayiya_cevir(item.get('indirimli_fiyat'))
         is_euro = ("BANNER" in item_marka.upper() or "EURO" in str(item.get('para_birimi','')).upper())
         
-        fiyat_tl = ham_fiyat * guncel_kur if is_euro else ham_fiyat
-        net_tl = (ind_fiyat * (guncel_kur if is_euro else 1)) if ind_fiyat > 0 else fiyat_tl * (1 - (iskonto / 100))
+        f_tl = ham_fiyat * guncel_kur if is_euro else ham_fiyat
+        n_tl = (ind_fiyat * (guncel_kur if is_euro else 1)) if ind_fiyat > 0 else f_tl * (1 - (iskonto / 100))
             
-        item.update({'liste_fiyat_gosterim': format_fiyat_birimli(fiyat_tl, "TL"), 'fiyat_gosterim': format_fiyat_birimli(net_tl, "TL"), 'resim_temiz': str(item.get('resim', '')).strip(), 'koli_ici': koli_ici_belirle(item)})
+        item.update({'liste_fiyat_gosterim': format_fiyat_birimli(f_tl, "TL"), 'fiyat_gosterim': format_fiyat_birimli(n_tl, "TL"), 'resim_temiz': str(item.get('resim', '')).strip(), 'koli_ici': koli_ici_belirle(item)})
         gecerli_urunler.append(item)
         
     markalar = sorted(list(set([str(u['marka']) for u in items if u.get('marka')])))
@@ -193,6 +191,7 @@ def sepetim():
             sepet_listesi.append(u_copy)
     return render_template('sepet.html', sepet=sepet_listesi, toplam_tl=format_fiyat_birimli(t_tl, "TL"), kur=f"{guncel_kur:,.2f}".replace('.', ','), bayi_adi=session['bayi_adi'], wp_no="905335033019", iskonto=iskonto)
 
+# --- KRİTİK ONAY FONKSİYONU ---
 @app.route('/sepet_onayla', methods=['POST'])
 def sepet_onayla():
     if not session.get('giris_yapildi'): return redirect(url_for('login'))
@@ -202,18 +201,18 @@ def sepet_onayla():
     if not sepet: return redirect(url_for('sepetim'))
     
     tum_urunler = verileri_yukle('urunler')
-    mail_icerik = f"Siparis: {bayi_adi}\n" + "-"*20 + "\n"
+    mail_metni = f"Bayi: {bayi_adi}\n" + "-"*20 + "\n"
     for u_no, adet in sepet.items():
         urun = next((u for u in tum_urunler if str(u['urun_no']) == str(u_no)), None)
-        mail_icerik += f"- {urun['urun_adi'] if urun else u_no} | Adet: {adet}\n"
+        mail_metni += f"- {urun['urun_adi'] if urun else u_no} | Kod: {u_no} | Adet: {adet}\n"
     
-    siparis_mail_at(bayi_adi, mail_icerik)
+    siparis_mail_at(bayi_adi, mail_metni)
     
-    # KESİN TEMİZLİK
+    # SEPETİ SİL
     arsiv[bayi_id] = {}
     sepet_kaydet_sunucuya(bayi_id, {})
     
-    return render_template('tamam.html', mesaj="Siparişiniz başarıyla ulaştı.")
+    return render_template('tamam.html', mesaj="Siparişiniz başarıyla alındı.")
 
 @app.route('/sepete_ekle/<urun_no>')
 def sepete_ekle(urun_no):
